@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -54,6 +54,19 @@ export default function LoginPage() {
   const [showPwd, setShowPwd]   = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
+  // Page de retour après connexion acheteur (ex: /commande). Uniquement chemins internes.
+  const [nextUrl, setNextUrl]   = useState('/')
+
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    const next = sp.get('next')
+    if (next && next.startsWith('/') && !next.startsWith('//')) setNextUrl(next)
+    const r = sp.get('role')
+    if (r === 'buyer' || r === 'merchant') {
+      setRole(r)
+      setMode('whatsapp')
+    }
+  }, [])
 
   function startCooldown() {
     setCooldown(30)
@@ -118,7 +131,7 @@ export default function LoginPage() {
       if (role === 'merchant') {
         router.push('/merchant/dashboard')
       } else {
-        router.push('/')
+        router.push(nextUrl)
       }
     }
   }
@@ -161,7 +174,7 @@ export default function LoginPage() {
     if (role === 'merchant') {
       router.push('/merchant/dashboard')
     } else {
-      router.push('/')
+      router.push(nextUrl)
     }
   }
 
@@ -261,6 +274,30 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* ── ACHETER SANS COMPTE (bien visible) ── */}
+              <Link
+                id="btn-guest-browse"
+                href="/"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  padding: '16px 20px', borderRadius: 16, textDecoration: 'none',
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  color: 'white', fontWeight: 800, fontSize: '1rem',
+                  boxShadow: '0 6px 20px rgba(22,163,74,0.35)',
+                }}
+              >
+                <ShoppingBag size={20} /> Voir les produits — sans compte <ArrowRight size={18} />
+              </Link>
+              <div style={{ textAlign: 'center', fontSize: '.72rem', color: 'rgba(255,255,255,.45)', marginTop: -6 }}>
+                Aucune inscription nécessaire pour commander
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+                <span style={{ fontSize: '.65rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '.08em' }}>OU SE CONNECTER</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              </div>
+
               {/* ── Bouton ACHETEUR ── */}
               <button
                 id="btn-role-buyer"
@@ -346,6 +383,21 @@ export default function LoginPage() {
                   <div style={{ fontSize: '.72rem', color: 'rgba(255,255,255,.4)', marginTop: 2 }}>{whatsappSub}</div>
                 </div>
               </div>
+
+              {role === 'buyer' && (
+                <Link
+                  id="btn-guest-continue-top"
+                  href={nextUrl}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '14px 18px', borderRadius: 14, textDecoration: 'none',
+                    background: 'linear-gradient(135deg, #16a34a, #15803d)', color: 'white',
+                    fontWeight: 800, fontSize: '.95rem', boxShadow: '0 4px 16px rgba(22,163,74,0.3)',
+                  }}
+                >
+                  Continuer sans compte <ArrowRight size={16} />
+                </Link>
+              )}
 
               {/* Indicateur de rôle */}
               <div style={{
@@ -445,12 +497,18 @@ export default function LoginPage() {
                 )}
               </div>
 
-              {/* Acheteur : option sans compte */}
+              {/* Acheteur : option sans compte — bien visible */}
               {role === 'buyer' && (
-                <Link href="/" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', marginTop: 2 }}>
-                  <span style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.22)', textDecoration: 'underline', cursor: 'pointer' }}>
-                    Continuer sans compte →
-                  </span>
+                <Link
+                  href={nextUrl === '/' ? '/' : nextUrl}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '14px 18px', borderRadius: 14, textDecoration: 'none', marginTop: 4,
+                    background: 'linear-gradient(135deg, #16a34a, #15803d)', color: 'white',
+                    fontWeight: 800, fontSize: '.92rem', boxShadow: '0 4px 16px rgba(22,163,74,0.3)',
+                  }}
+                >
+                  Continuer sans compte <ArrowRight size={16} />
                 </Link>
               )}
             </div>

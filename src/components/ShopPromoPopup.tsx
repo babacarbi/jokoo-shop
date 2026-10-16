@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   Store, X, ArrowRight, Loader2, CheckCircle, RefreshCw, Sparkles,
@@ -48,6 +48,7 @@ type Step = 'promo' | 'phone' | 'otp' | 'pin' | 'shop' | 'success'
 
 export default function ShopPromoPopup() {
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
 
   const [visible, setVisible]       = useState(false)
@@ -80,6 +81,9 @@ export default function ShopPromoPopup() {
   }, [])
 
   useEffect(() => {
+    // Les acheteurs ne doivent jamais être interrompus : popup marchand uniquement sur l'accueil
+    if (pathname !== '/') return
+
     async function checkUserAndShow() {
       // Si l'utilisateur a déjà créé sa boutique ou est connecté, on bloque définitivement
       if (localStorage.getItem('shop_promo_disabled') === 'true') return
@@ -90,17 +94,17 @@ export default function ShopPromoPopup() {
         return
       }
       
-      // Diminuer l'insistance : une fois toutes les 24h max
+      // Pas insistant : une fois par semaine maximum
       const lastShown = localStorage.getItem(STORAGE_KEY)
-      if (lastShown && Date.now() - parseInt(lastShown) < 24 * 60 * 60 * 1000) return
+      if (lastShown && Date.now() - parseInt(lastShown) < 7 * 24 * 60 * 60 * 1000) return
       
-      const t = setTimeout(showPopup, 3000)
+      const t = setTimeout(showPopup, 20000)
       timerRef.current = t
     }
     checkUserAndShow()
     
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [showPopup, supabase.auth])
+  }, [showPopup, supabase.auth, pathname])
 
   function close() {
     setAnimating(false)

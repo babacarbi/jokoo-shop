@@ -2,18 +2,19 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Store, ShoppingCart, User, Search } from 'lucide-react'
+import { Home, Store, ShoppingCart, ClipboardList } from 'lucide-react'
+import { useCart } from '@/lib/cart-context'
 
 const navItems = [
-  { href: '/',          icon: Home,         label: 'Accueil' },
-  { href: '/boutiques', icon: Store,         label: 'Boutiques' },
-  { href: '/recherche', icon: Search,        label: 'Recherche' },
-  { href: '/panier',    icon: ShoppingCart,  label: 'Panier',   badge: 0 },
-  { href: '/compte',    icon: User,          label: 'Compte' },
+  { href: '/',              icon: Home,          label: 'Accueil' },
+  { href: '/boutiques',     icon: Store,         label: 'Boutiques' },
+  { href: '/panier',        icon: ShoppingCart,  label: 'Panier', cart: true },
+  { href: '/mes-commandes', icon: ClipboardList, label: 'Mes commandes' },
 ]
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { totalItems } = useCart()
 
   // Ne pas afficher sur les pages admin/merchant
   // ni sur les pages avec leur propre barre d'action (produit, panier, commande)
@@ -48,10 +49,10 @@ export default function BottomNav() {
               />
             </span>
 
-            {/* Badge (for cart) */}
-            {item.badge !== undefined && item.badge > 0 && (
-              <span className="nav-badge" aria-label={`${item.badge} article${item.badge > 1 ? 's' : ''}`}>
-                {item.badge}
+            {/* Badge (panier) */}
+            {item.cart && totalItems > 0 && (
+              <span className="nav-badge" aria-label={`${totalItems} article${totalItems > 1 ? 's' : ''}`}>
+                {totalItems}
               </span>
             )}
 

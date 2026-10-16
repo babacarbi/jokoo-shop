@@ -39,8 +39,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Paramètres manquants ou code PIN invalide' }, { status: 400 })
     }
 
-    // Rôle restreint : jamais de super_admin depuis le client
-    const safeRole: 'merchant' | 'customer' = role === 'customer' ? 'customer' : 'merchant'
+    // Rôle restreint : jamais de super_admin depuis le client. Par défaut : acheteur.
+    const safeRole: 'merchant' | 'customer' = role === 'merchant' ? 'merchant' : 'customer'
 
     const normalized = String(phone).trim().replace(/\s+/g, '')
 

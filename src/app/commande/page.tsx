@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Phone, User, Globe, MessageCircle, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Phone, User, MessageCircle, ShoppingBag, ClipboardList } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 
 const ORANGE = '#f97316'
@@ -75,10 +75,11 @@ export default function CommandePage() {
   const [fullName, setFullName] = useState('')
   const [country, setCountry]   = useState('SN')
   const [phoneNum, setPhoneNum] = useState('')
-  const [isWhatsapp, setIsWhatsapp] = useState(false)
+  const [isWhatsapp, setIsWhatsapp] = useState(true)
   const [status, setStatus] = useState<Status>('idle')
   const [errMsg, setErrMsg] = useState('')
   const [orderId, setOrderId] = useState('')
+  const [trackLink, setTrackLink] = useState('/mes-commandes')
   const [merchantGroups, setMerchantGroups] = useState<Record<string, any>>({})
 
   const selectedCountry = COUNTRIES.find(c => c.code === country) ?? COUNTRIES[0]
@@ -122,8 +123,23 @@ export default function CommandePage() {
       const results = await Promise.all(promises)
       const allOk = results.every(r => r.ok)
       if (allOk) {
-        const firstData = await results[0].json()
-        setOrderId(firstData.order_id ?? 'OK')
+        const created: { order_id?: string; tracking_token?: string }[] = await Promise.all(
+          results.map(r => r.json().catch(() => ({})))
+        )
+        setOrderId(created[0]?.order_id ?? 'OK')
+
+        // Mémoriser les commandes sur cet appareil (historique sans compte)
+        try {
+          const raw = localStorage.getItem('jokoo_my_orders')
+          const prev: unknown[] = raw ? JSON.parse(raw) : []
+          const now = new Date().toISOString()
+          const fresh = created
+            .map((c, i) => c.tracking_token ? { token: c.tracking_token, name: items[i]?.name ?? '', shop: items[i]?.shop ?? '', date: now } : null)
+            .filter(Boolean)
+          localStorage.setItem('jokoo_my_orders', JSON.stringify([...fresh, ...prev].slice(0, 50)))
+        } catch {}
+        const tokens = created.map(c => c.tracking_token).filter(Boolean)
+        setTrackLink(tokens.length === 1 ? `/suivi/${tokens[0]}` : '/mes-commandes')
         
         // Grouper par marchand
         const groups: Record<string, { shopName: string, items: any[], total: number }> = {}
@@ -212,6 +228,12 @@ export default function CommandePage() {
             )
           })}
 
+          <Link href={trackLink} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#eff6ff', color: BLUE, padding: '14px', borderRadius: 12, fontWeight: 800, textDecoration: 'none', fontSize: '0.9rem', marginTop: 4 }}>
+            <ClipboardList size={18} /> Suivre ma commande
+          </Link>
+          <Link href="/register?role=buyer" style={{ display: 'block', color: '#6b7280', padding: '10px 4px 0', fontSize: '0.76rem', textDecoration: 'none', lineHeight: 1.5 }}>
+            Optionnel : <span style={{ color: BLUE, fontWeight: 700, textDecoration: 'underline' }}>créer un compte</span> pour retrouver vos commandes sur tous vos appareils
+          </Link>
           <Link href="/" style={{ display: 'block', background: '#f3f4f6', color: '#374151', padding: '14px', borderRadius: 12, fontWeight: 800, textDecoration: 'none', fontSize: '0.9rem', marginTop: 12 }}>
             Continuer mes achats
           </Link>
@@ -254,6 +276,17 @@ export default function CommandePage() {
         </div>
       </div>
 
+      {/* ── CONNEXION FACULTATIVE ── */}
+      <div style={{ margin: '0 12px 10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 14px' }}>
+        <div style={{ fontWeight: 800, fontSize: '0.84rem', color: '#166534' }}>✅ Pas besoin de compte pour commander</div>
+        <div style={{ fontSize: '0.74rem', color: '#4b5563', marginTop: 4, lineHeight: 1.5 }}>
+          Remplissez simplement vos coordonnées ci-dessous.{' '}
+          Déjà un compte ?{' '}
+          <Link href="/login?role=buyer&next=/commande" style={{ color: BLUE, fontWeight: 700 }}>Se connecter</Link>{' '}
+          <span style={{ color: '#9ca3af' }}>(facultatif)</span>
+        </div>
+      </div>
+
       {/* ── FORMULAIRE ── */}
       <form onSubmit={handleSubmit} style={{ margin: '0 12px' }}>
         <div style={{ background: 'white', borderRadius: 14, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
@@ -292,38 +325,25 @@ export default function CommandePage() {
               </div>
             </div>
 
-            {/* Pays */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 6 }}>
-                Pays *
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Globe size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none', zIndex: 1 }} />
-                <select
-                  value={country}
-                  onChange={e => setCountry(e.target.value)}
-                  style={{ width: '100%', padding: '11px 12px 11px 34px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: '0.88rem', outline: 'none', background: 'white', boxSizing: 'border-box', appearance: 'none', cursor: 'pointer', minHeight: 'auto' }}
-                >
-                  {COUNTRIES.map(c => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} {c.name} ({c.dial})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Téléphone avec indicatif */}
+            {/* Téléphone avec indicatif (le pays se choisit via l'indicatif) */}
             <div>
               <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 6 }}>
                 Numéro de téléphone *
               </label>
               <div style={{ display: 'flex', gap: 8 }}>
                 {/* Indicatif pays */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '11px 12px', flexShrink: 0, fontSize: '0.88rem', fontWeight: 700, color: '#374151' }}>
-                  <span>{selectedCountry.flag}</span>
-                  <span style={{ color: '#6b7280' }}>{selectedCountry.dial}</span>
-                </div>
+                <select
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  aria-label="Pays et indicatif"
+                  style={{ flexShrink: 0, background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '11px 8px', fontSize: '0.88rem', fontWeight: 700, color: '#374151', cursor: 'pointer', minHeight: 'auto', maxWidth: 110 }}
+                >
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.dial} {c.name}
+                    </option>
+                  ))}
+                </select>
                 {/* Numéro */}
                 <div style={{ position: 'relative', flex: 1 }}>
                   <Phone size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />

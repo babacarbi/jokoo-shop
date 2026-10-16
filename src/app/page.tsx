@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Search, ShoppingCart, User, Star, Heart, ArrowRight, Store, Tag, Shield, Truck, Zap, Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getShopsData } from '@/app/actions'
+import AuthMenu from '@/components/AuthMenu'
+import { useCart } from '@/lib/cart-context'
 
 const BLUE = '#2D6BE4'
 
@@ -171,6 +173,7 @@ export default function HomePage() {
   const [dbProducts, setDbProducts] = useState<typeof PRODUCTS>([])
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const supabase = createClient()
+  const { totalItems } = useCart()
 
   useEffect(() => {
     async function loadProducts() {
@@ -281,7 +284,7 @@ export default function HomePage() {
             </Link>
             {' '}
             <Link
-              href="/login"
+              href="/login?role=merchant"
               style={{
                 color: 'white',
                 fontWeight: 700,
@@ -331,12 +334,10 @@ export default function HomePage() {
 
           {/* Actions — desktop */}
           <div className="navbar-actions-desktop" style={{ display: 'none', gap: 8, marginLeft: 'auto' }}>
-            <Link href="/login" className="navbar-action-btn">
-              <User size={15} /> Connexion
-            </Link>
+            <AuthMenu />
             <Link href="/panier" className="navbar-action-btn" style={{ position: 'relative' }}>
               <ShoppingCart size={15} /> Panier
-              <span style={{ position: 'absolute', top: -5, right: -5, background: BLUE, color: 'white', borderRadius: '50%', width: 17, height: 17, fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'auto' }}>0</span>
+              {totalItems > 0 && <span style={{ position: 'absolute', top: -5, right: -5, background: BLUE, color: 'white', borderRadius: '50%', width: 17, height: 17, fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'auto' }}>{totalItems}</span>}
             </Link>
           </div>
 
@@ -344,11 +345,9 @@ export default function HomePage() {
           <div className="navbar-actions" style={{ marginLeft: 'auto' }}>
             <Link href="/panier" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#374151' }} aria-label="Panier">
               <ShoppingCart size={20} />
-              <span style={{ position: 'absolute', top: 4, right: 4, background: BLUE, color: 'white', borderRadius: '50%', width: 15, height: 15, fontSize: '0.55rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'auto' }}>0</span>
+              {totalItems > 0 && <span style={{ position: 'absolute', top: 4, right: 4, background: BLUE, color: 'white', borderRadius: '50%', width: 15, height: 15, fontSize: '0.55rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'auto' }}>{totalItems}</span>}
             </Link>
-            <Link href="/login" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 10, border: '1px solid #e5e7eb', textDecoration: 'none', color: '#374151' }} aria-label="Connexion">
-              <User size={20} />
-            </Link>
+            <AuthMenu compact />
           </div>
         </div>
 
