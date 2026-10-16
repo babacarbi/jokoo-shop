@@ -1,0 +1,69 @@
+{
+  "name": "MarketPlace Africa",
+  "short_name": "MarketPlace",
+  "description": "La marketplace africaine — Achetez et vendez en toute confiance",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#3B6FE8",
+  "orientation": "portrait",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["shopping", "lifestyle", "business"],
+  "icons": [
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "180x180",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "MarketPlace Africa — Accueil"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Boutiques",
+      "short_name": "Boutiques",
+      "description": "Voir toutes les boutiques",
+      "url": "/boutiques",
+      "icons": [{ "src": "/icon-512.jpg", "sizes": "512x512" }]
+    },
+    {
+      "name": "Mon compte",
+      "short_name": "Compte",
+      "description": "Accéder à mon compte",
+      "url": "/login",
+      "icons": [{ "src": "/icon-512.jpg", "sizes": "512x512" }]
+    },
+    {
+      "name": "Mon tableau de bord",
+      "short_name": "Dashboard",
+      "description": "Espace marchand",
+      "url": "/merchant/dashboard",
+      "icons": [{ "src": "/icon-512.jpg", "sizes": "512x512" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

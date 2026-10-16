@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts locaux / debug (contiennent des acces admin) — ne jamais committer
+/debug.ts
+/fix-*.js
+/fix-*.ts
+/invert-theme.js
+/revert-theme.js
+/test-*.js
+/test-*.ts
+/scripts/
+*.old
