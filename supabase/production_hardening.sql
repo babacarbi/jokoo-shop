@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS public.otp_codes (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ALTER TABLE public.otp_codes ENABLE ROW LEVEL SECURITY;   -- aucune politique : serveur uniquement
+-- Privilèges explicites pour le serveur (sinon: 42501 permission denied for table otp_codes)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.otp_codes TO service_role;
 
 -- ── 5. Rôles : app_metadata (non modifiable par l'utilisateur) ─────────────
 -- Avant : le rôle était dans user_metadata, modifiable depuis le navigateur.

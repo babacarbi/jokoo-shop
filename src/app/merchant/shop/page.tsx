@@ -77,13 +77,20 @@ export default function MerchantShopPage() {
     })
   }
 
-  async function uploadImage(file: File, type: string) {
-    const ext = file.name.split('.').pop()
-    const fileName = `${type}-${Date.now()}.${ext}`
-    const { data, error } = await supabase.storage.from('shops').upload(fileName, file)
-    if (error) return await fileToBase64(file)
-    const { data: { publicUrl } } = supabase.storage.from('shops').getPublicUrl(fileName)
-    return publicUrl
+  async function uploadImage(file: File, _type: string) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) return await fileToBase64(file)
+      const data = await res.json()
+      return data.url || (await fileToBase64(file))
+    } catch {
+      return await fileToBase64(file)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -120,13 +127,19 @@ export default function MerchantShopPage() {
   return (
     <div style={{ display: 'flex', width: '100%' }}>
       <aside className="sidebar">
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid hsl(222 25% 22%)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: 'linear-gradient(135deg, hsl(32 95% 55%), hsl(220 90% 56%))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Store size={18} color="white" />
+        {/* ── LOGO JOKKO ── */}
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid hsl(214 32% 91%)' }}>
+          <Link href="/merchant/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <img 
+              src="/logos/logo-jokoo-cart.png" 
+              alt="Jokko" 
+              style={{ height: 40, width: 'auto', objectFit: 'contain' }} 
+            />
+            <div style={{ borderLeft: '1.5px solid hsl(214 32% 88%)', paddingLeft: 8 }}>
+              <div style={{ fontSize: '0.62rem', color: '#9ca3af', fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1.1 }}>ESPACE</div>
+              <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 800, lineHeight: 1.2 }}>MARCHAND</div>
             </div>
-            <span style={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif' }}>Ma Boutique</span>
-          </div>
+          </Link>
         </div>
         <nav style={{ padding: 12, flex: 1 }}>
           {[

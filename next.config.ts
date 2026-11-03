@@ -34,6 +34,14 @@ const withPWA = withPWAInit({
           expiration: { maxEntries: 100, maxAgeSeconds: 24 * 60 * 60 },
         },
       },
+      {
+        urlPattern: /^https:\/\/.*\.r2\.dev\/.*/i,
+        handler: "StaleWhileRevalidate",
+        options: {
+          cacheName: "cloudflare-r2-images",
+          expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        },
+      },
     ],
   },
 })
@@ -48,6 +56,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "sthpdkvglqfvvbtrwrps.supabase.co",
         pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "pub-bfe6516b4d834b9da9b2ef39dcd6ea60.r2.dev",
+      },
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
       },
     ],
   },

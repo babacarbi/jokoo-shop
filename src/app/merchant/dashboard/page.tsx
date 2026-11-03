@@ -153,20 +153,19 @@ export default function MerchantDashboard() {
 
       {/* ── DESKTOP SIDEBAR ── */}
       <aside className="sidebar">
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid hsl(214 32% 91%)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 11, background: 'linear-gradient(135deg, hsl(25 95% 53%), hsl(221 83% 53%))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px hsl(25 95% 53% / 0.3)', flexShrink: 0 }}>
-              <Store size={20} color="white" />
+        {/* ── LOGO JOKKO ── */}
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid hsl(214 32% 91%)' }}>
+          <Link href="/merchant/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <img 
+              src="/logos/logo-jokoo-cart.png" 
+              alt="Jokko" 
+              style={{ height: 40, width: 'auto', objectFit: 'contain' }} 
+            />
+            <div style={{ borderLeft: '1.5px solid hsl(214 32% 88%)', paddingLeft: 8 }}>
+              <div style={{ fontSize: '0.62rem', color: '#9ca3af', fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1.1 }}>ESPACE</div>
+              <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 800, lineHeight: 1.2 }}>MARCHAND</div>
             </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', fontSize: '0.9rem', color: 'hsl(222 47% 11%)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shopName}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem' }}>
-                <Star size={10} fill="hsl(38 92% 50%)" color="hsl(38 92% 50%)" />
-                <span style={{ color: 'hsl(38 92% 38%)', fontWeight: 700 }}>4.8</span>
-                <span style={{ color: 'hsl(215 16% 55%)' }}>· Plan Pro</span>
-              </div>
-            </div>
-          </div>
+          </Link>
         </div>
         <nav style={{ padding: '16px 12px', flex: 1 }}>
           {navItems.map(item => (

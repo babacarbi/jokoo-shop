@@ -513,7 +513,7 @@ function RegisterInner() {
             </div>
 
             {/* Toggle Je vends / J'achète */}
-            {step === 'phone' && (
+            {step === 'phone' && defaultRole !== 'merchant' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 28, background: '#64748b', borderRadius: 14, padding: 4 }}>
                 {[
                   { value: 'merchant', emoji: '🏪', label: 'Je vends' },
@@ -615,7 +615,7 @@ function RegisterInner() {
                   <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
                 </div>
 
-                <Link href="/login" style={{ textDecoration: 'none' }}>
+                <Link href={isMerchant ? '/login?role=merchant' : '/login?role=buyer'} style={{ textDecoration: 'none' }}>
                   <button className="reg-btn"
                     style={{ background: 'rgba(255,255,255,.08)', border: '1px solid #64748b', color: 'rgba(255,255,255,.7)', fontWeight: 600 }}>
                     Déjà un compte ? Se connecter

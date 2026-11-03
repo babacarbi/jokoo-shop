@@ -84,22 +84,25 @@ export default function NewProductPage() {
     handleFiles(e.dataTransfer.files)
   }
 
-  // ── Upload image vers Supabase Storage ──────────────────
-  async function uploadImage(file: File, shopId: string): Promise<string | null> {
-    const ext = file.name.split('.').pop()
-    const filename = `${shopId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(filename, file, { contentType: file.type, upsert: false })
-
-    if (error) return null
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(data.path)
-
-    return publicUrl
+  // ── Upload image vers Cloudflare R2 ──────────────────────
+  async function uploadImage(file: File, _shopId: string): Promise<string | null> {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) {
+        console.error('Erreur upload:', await res.text())
+        return null
+      }
+      const data = await res.json()
+      return data.url || null
+    } catch (err) {
+      console.error('Exception upload:', err)
+      return null
+    }
   }
 
   // ── Soumission du formulaire ─────────────────────────────
@@ -188,12 +191,18 @@ export default function NewProductPage() {
     <div className="merchant-page-wrapper">
       {/* Sidebar simplifiée */}
       <aside className="sidebar">
-        <div style={{ padding: '24px 20px', borderBottom: '1px solid hsl(214 32% 91%)' }}>
-          <Link href="/merchant/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'hsl(222 47% 11%)' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: 'linear-gradient(135deg, hsl(25 95% 53%), hsl(221 83% 53%))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px hsl(25 95% 53% / 0.3)' }}>
-              <Package size={18} color="white" />
+        {/* ── LOGO JOKKO ── */}
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid hsl(214 32% 91%)' }}>
+          <Link href="/merchant/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <img 
+              src="/logos/logo-jokoo-cart.png" 
+              alt="Jokko" 
+              style={{ height: 40, width: 'auto', objectFit: 'contain' }} 
+            />
+            <div style={{ borderLeft: '1.5px solid hsl(214 32% 88%)', paddingLeft: 8 }}>
+              <div style={{ fontSize: '0.62rem', color: '#9ca3af', fontWeight: 700, letterSpacing: '0.04em', lineHeight: 1.1 }}>ESPACE</div>
+              <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 800, lineHeight: 1.2 }}>MARCHAND</div>
             </div>
-            <span style={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}>Mes Produits</span>
           </Link>
         </div>
         <nav style={{ padding: 12, flex: 1 }}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle, Phone, User, MessageCircle, ShoppingBag, ClipboardList } from 'lucide-react'
@@ -84,8 +84,13 @@ export default function CommandePage() {
 
   const selectedCountry = COUNTRIES.find(c => c.code === country) ?? COUNTRIES[0]
 
+  useEffect(() => {
+    if (items.length === 0 && status !== 'success') {
+      router.replace('/panier')
+    }
+  }, [items.length, status, router])
+
   if (items.length === 0 && status !== 'success') {
-    router.replace('/panier')
     return null
   }
 

@@ -174,6 +174,13 @@ export default function HomePage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const supabase = createClient()
   const { totalItems } = useCart()
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setLoggedIn(!!session?.user))
+    return () => sub.subscription.unsubscribe()
+  }, [supabase])
 
   useEffect(() => {
     async function loadProducts() {
@@ -281,23 +288,6 @@ export default function HomePage() {
             }}
           >
               Ouvrez votre boutique en 2 minutes →
-            </Link>
-            {' '}
-            <Link
-              href="/login?role=merchant"
-              style={{
-                color: 'white',
-                fontWeight: 700,
-                textDecoration: 'none',
-                background: 'transparent',
-                padding: '4px 10px',
-                borderRadius: 20,
-                fontSize: '0.85rem',
-                display: 'inline-flex', alignItems: 'center',
-                textDecorationLine: 'underline',
-              }}
-            >
-              Se connecter
             </Link>
           </span>
         </div>
@@ -526,9 +516,11 @@ export default function HomePage() {
             <Link href="/register?role=merchant" style={{ background: BLUE, color: 'white', padding: '10px 18px', borderRadius: 9, fontWeight: 800, textDecoration: 'none', fontSize: '0.85rem', minHeight: 44, display: 'flex', alignItems: 'center' }}>
               🏪 Créer ma boutique
             </Link>
+            {!loggedIn && (
             <Link href="/login" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', padding: '10px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.3)', minHeight: 44, display: 'flex', alignItems: 'center' }}>
               Se connecter
             </Link>
+            )}
             <Link href="/boutiques" style={{ background: 'rgba(255,255,255,0.08)', color: 'white', padding: '10px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.15)', minHeight: 44, display: 'flex', alignItems: 'center' }}>
               Explorer →
             </Link>
