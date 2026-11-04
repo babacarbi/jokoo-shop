@@ -328,8 +328,6 @@ export default function MerchantDashboard() {
                   {shop?.slug && (
                     <a 
                       href={`/boutique/${shop.slug}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
                       className="btn btn-sm" 
                       style={{ justifyContent: 'flex-start', background: '#25d366', color: 'white', textDecoration: 'none', border: 'none' }}
                     >

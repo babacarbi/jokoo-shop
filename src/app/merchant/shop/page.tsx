@@ -183,7 +183,7 @@ export default function MerchantShopPage() {
                 <button type="button" onClick={copyLink} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: copied ? '#16a34a' : 'hsl(221 83% 53%)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', touchAction: 'manipulation', whiteSpace: 'nowrap' }}>
                   <Copy size={14} /> {copied ? 'Copié !' : 'Copier'}
                 </button>
-                 <Link href={`/boutique/${shopSlug}`} target="_blank" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: '#f97316', color: 'white', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                 <Link href={`/boutique/${shopSlug}`} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: '#f97316', color: 'white', borderRadius: 10, padding: '10px 16px', fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
                   <ExternalLink size={14} /> Voir
                 </Link>
               </div>

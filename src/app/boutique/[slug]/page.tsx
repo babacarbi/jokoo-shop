@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Store, Phone, MapPin, Globe, ShoppingBag, Star, ArrowLeft, Share2 } from 'lucide-react'
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 interface Product {
@@ -165,8 +166,10 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
   if (!data) notFound()
 
   const { shop, products } = data
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL
-    ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://marketplace-africa.com')
+  const h = await headers()
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? ''
+  const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')
+  const appUrl = host ? `${proto}://${host}` : ''
   const shopUrl = `${appUrl}/boutique/${slug}`
 
   return (
@@ -177,7 +180,7 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: '#6b7280', fontSize: '0.82rem', flexShrink: 0 }}>
             <ArrowLeft size={16} />
-            <span style={{ display: 'none' }} className="sm-show">Accueil</span>
+            <span style={{ fontWeight: 600 }}>Accueil</span>
           </Link>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #2D6BE4, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

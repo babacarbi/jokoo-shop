@@ -197,7 +197,7 @@ export default function ShopPromoPopup() {
   if (!visible) return null
 
   const fullPhone = `${dialCode}${localNum.replace(/\s+/g, '')}`
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://marketplace-africa.com'
+  const APP_URL = typeof window !== 'undefined' ? window.location.origin : ''
   const shopUrl = `${APP_URL}/boutique/${shopSlug}`
   const STEPS: Step[] = ['phone','otp','pin','shop','success']
   const stepIdx = STEPS.indexOf(step)
@@ -463,7 +463,7 @@ export default function ShopPromoPopup() {
                   <span style={{ fontSize:'.95rem' }}>💬</span> Partager sur WhatsApp
                 </a>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:7 }}>
-                  <a href={shopUrl} target="_blank" rel="noopener noreferrer" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, height:42, borderRadius:11, background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)', color:'rgba(255,255,255,.6)', fontSize:'.75rem', fontWeight:600, textDecoration:'none' }}>👁 Voir ma boutique</a>
+                  <a href={`/boutique/${shopSlug}`} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, height:42, borderRadius:11, background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)', color:'rgba(255,255,255,.6)', fontSize:'.75rem', fontWeight:600, textDecoration:'none' }}>👁 Voir ma boutique</a>
                   <button onClick={() => { close(); router.push('/merchant/dashboard') }} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, height:42, borderRadius:11, background:'rgba(249,115,22,.15)', border:'1.5px solid rgba(249,115,22,.35)', color:'#f97316', fontSize:'.75rem', fontWeight:700, cursor:'pointer', fontFamily:'Inter, sans-serif' }}>Dashboard →</button>
                 </div>
               </div>

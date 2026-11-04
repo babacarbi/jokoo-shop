@@ -993,8 +993,8 @@ function RegisterInner() {
 
             {/* ══ ÉTAPE SUCCESS : BOUTIQUE CRÉÉE + LIEN DE PARTAGE ══ */}
             {step === 'success' && (() => {
-              const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://marketplace-africa.com'
-              const shopUrl = `${APP_URL}/boutiques/${shopSlug}`
+              const APP_URL = typeof window !== 'undefined' ? window.location.origin : ''
+              const shopUrl = `${APP_URL}/boutique/${shopSlug}`
               const waText = encodeURIComponent(`🛍️ Découvrez ma boutique "${shopName}" sur Jokoo !\n👉 ${shopUrl}`)
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, animation: 'fadeIn .4s ease' }}>
@@ -1024,7 +1024,7 @@ function RegisterInner() {
                         transition: 'all .2s', touchAction: 'manipulation',
                       }}>
                       <span style={{ fontSize: '.82rem', color: '#f97316', fontWeight: 700, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {shopUrl.replace('https://', '')}
+                        {shopUrl.replace(/^https?:\/\//, '')}
                       </span>
                       <span style={{ flexShrink: 0, fontSize: '.72rem', fontWeight: 700, color: copied ? '#22c55e' : '#64748b', background: copied ? 'rgba(34,197,94,.12)' : '#64748b', padding: '4px 10px', borderRadius: 8, transition: 'all .2s' }}>
                         {copied ? '✓ Copié !' : 'Copier'}
@@ -1050,11 +1050,11 @@ function RegisterInner() {
 
                   {/* Actions secondaires */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <a
-                      href={shopUrl} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44, borderRadius: 12, background: '#64748b', border: '1px solid #64748b', color: 'rgba(255,255,255,.4)', fontSize: '.8rem', fontWeight: 600, textDecoration: 'none', touchAction: 'manipulation' }}>
+                    <Link
+                      href={`/boutique/${shopSlug}`}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44, borderRadius: 12, background: '#64748b', border: '1px solid #64748b', color: 'rgba(255,255,255,.85)', fontSize: '.8rem', fontWeight: 600, textDecoration: 'none', touchAction: 'manipulation' }}>
                       👁 Voir ma boutique
-                    </a>
+                    </Link>
                     <button
                       onClick={() => router.push('/merchant/dashboard')}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44, borderRadius: 12, background: 'rgba(249,115,22,.15)', border: '1.5px solid rgba(249,115,22,.35)', color: '#f97316', fontSize: '.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', touchAction: 'manipulation' }}>
