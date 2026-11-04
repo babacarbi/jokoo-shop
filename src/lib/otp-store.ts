@@ -47,7 +47,7 @@ export async function generateOtp(phone: string): Promise<string> {
   return code
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<boolean> {
+export async function verifyOtp(phone: string, code: string, consume = true): Promise<boolean> {
   const db = await createAdminClient()
   const { data: entry } = await db
     .from('otp_codes').select('code_hash, expires_at, attempts').eq('phone', phone).maybeSingle()
@@ -65,6 +65,6 @@ export async function verifyOtp(phone: string, code: string): Promise<boolean> {
     return false
   }
 
-  await db.from('otp_codes').delete().eq('phone', phone) // Invalider après usage
+  if (consume) await db.from('otp_codes').delete().eq('phone', phone) // Invalider après usage
   return true
 }

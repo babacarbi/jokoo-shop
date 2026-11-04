@@ -144,6 +144,7 @@ function RegisterInner() {
   const [otpCode, setOtpCode]     = useState<string | null>(null)
   const [otpExpiry, setOtpExpiry] = useState<Date | null>(null)
   const [loading, setLoading]     = useState(false)
+  const [otpChecking, setOtpChecking] = useState(false)
   const [error, setError]         = useState('')
   const [heroIdx, setHeroIdx]     = useState(0)
   const [heroFading, setHeroFading] = useState(false)
@@ -155,6 +156,27 @@ function RegisterInner() {
   const [shopCategory, setShopCategory] = useState('')
   const [shopCreating, setShopCreating] = useState(false)
   const [shopSlug, setShopSlug]         = useState('')   // slug généré après création
+
+  // Validation automatique du code à 6 chiffres (sans consommer le code)
+  async function checkOtpAuto(code: string) {
+    setOtpChecking(true); setError('')
+    try {
+      const res = await fetch('/api/otp/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: fullPhone.replace(/\s+/g, ''), code, peek: true }),
+      })
+      if (res.ok) {
+        setPinInput('')
+        setStep('pin')
+      } else {
+        setError('Code non valide')
+        setOtpInput('')
+      }
+    } catch {
+      setError('Connexion impossible — réessayez.')
+    }
+    setOtpChecking(false)
+  }
 
   // Reprend le numéro déjà saisi (connexion) pour éviter de le retaper
   useEffect(() => {
@@ -716,18 +738,22 @@ function RegisterInner() {
                     type="text" inputMode="numeric" pattern="[0-9]*"
                     placeholder="● ● ● ● ● ●"
                     value={otpInput} maxLength={6}
-                    onChange={e => { setOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 6)
+                      setOtpInput(v); setError('')
+                      if (v.length === 6) checkOtpAuto(v)
+                    }}
+                    disabled={otpChecking}
                     autoComplete="one-time-code"
                     suppressHydrationWarning
                   />
                 </div>
 
-                <button className="reg-btn"
-                  disabled={loading || otpInput.length < 6}
-                  onClick={() => { setError(''); setPinInput(''); setStep('pin') }}
-                  style={{ background: `linear-gradient(135deg, ${accent}, ${isMerchant ? '#ea6b0b' : '#1d55c4'})`, boxShadow: `0 8px 24px ${accent}40`, animation: otpInput.length === 6 ? 'pulseOtp .8s ease' : 'none' }}>
-                  Continuer <ArrowRight size={18} />
-                </button>
+                {otpChecking && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'rgba(255,255,255,.6)', fontSize: '.85rem' }}>
+                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Vérification du code...
+                  </div>
+                )}
 
                 {/* Changer de numéro / Renvoyer le code */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>

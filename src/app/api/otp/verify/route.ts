@@ -4,13 +4,13 @@ import { verifyOtp } from '@/lib/otp-store'
 // POST /api/otp/verify — vérifie un OTP pour un numéro de téléphone
 export async function POST(req: Request) {
   try {
-    const { phone, code } = await req.json()
+    const { phone, code, peek } = await req.json()
     if (!phone || !code) {
       return NextResponse.json({ error: 'Numéro et code requis' }, { status: 400 })
     }
 
     const normalized = phone.trim().replace(/\s+/g, '')
-    const valid = await verifyOtp(normalized, String(code).trim())
+    const valid = await verifyOtp(normalized, String(code).trim(), !peek)
 
     if (!valid) {
       return NextResponse.json({ error: 'Code invalide ou expiré. Réessayez.' }, { status: 400 })
