@@ -140,6 +140,7 @@ function RegisterInner() {
   const [localNum, setLocalNum]   = useState('')
   const [step, setStep]           = useState<'phone' | 'otp' | 'shop' | 'success'>('phone')
   const [otpInput, setOtpInput]   = useState('')
+  const [pinInput, setPinInput]   = useState('')
   const [otpCode, setOtpCode]     = useState<string | null>(null)
   const [otpExpiry, setOtpExpiry] = useState<Date | null>(null)
   const [loading, setLoading]     = useState(false)
@@ -217,7 +218,7 @@ function RegisterInner() {
     const res = await fetch('/api/auth/register-phone', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: cleaned, code: otpInput.trim(), role }),
+      body: JSON.stringify({ phone: cleaned, code: otpInput.trim(), role, pinCode: pinInput }),
     })
     const data = await res.json()
 
@@ -678,8 +679,25 @@ function RegisterInner() {
                   />
                 </div>
 
+                <div>
+                  <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 600, color: 'rgba(255,255,255,.4)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                    Choisissez votre code PIN (4 chiffres)
+                  </label>
+                  <input className="otp-digit-input"
+                    type="password" inputMode="numeric" pattern="[0-9]*"
+                    placeholder="● ● ● ●"
+                    value={pinInput} maxLength={4}
+                    onChange={e => { setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4)); setError('') }}
+                    autoComplete="new-password"
+                    suppressHydrationWarning
+                  />
+                  <div style={{ fontSize: '.72rem', color: 'rgba(255,255,255,.35)', marginTop: 6 }}>
+                    Il servira à vous connecter la prochaine fois.
+                  </div>
+                </div>
+
                 <button className="reg-btn"
-                  disabled={loading || otpInput.length < 6}
+                  disabled={loading || otpInput.length < 6 || pinInput.length < 4}
                   onClick={verifyAndCreate}
                   style={{ background: `linear-gradient(135deg, ${accent}, ${isMerchant ? '#ea6b0b' : '#1d55c4'})`, boxShadow: `0 8px 24px ${accent}40`, animation: otpInput.length === 6 ? 'pulseOtp .8s ease' : 'none' }}>
                   {loading
