@@ -8,16 +8,16 @@ import { ShoppingBag, Store, Loader2, CheckCircle, ArrowLeft, RefreshCw, ArrowRi
 
 /* ── Catégories boutique ─────────────────────────────────────────── */
 const SHOP_CATEGORIES = [
-  { slug: 'mode-vetements',   label: 'Mode',    emoji: '👗', color: '#ec4899' },
-  { slug: 'electronique',     label: 'Électro',  emoji: '📱', color: '#3b82f6' },
-  { slug: 'alimentation',     label: 'Food',    emoji: '🛒', color: '#22c55e' },
-  { slug: 'beaute-sante',     label: 'Beauté',  emoji: '💄', color: '#a855f7' },
-  { slug: 'maison-deco',      label: 'Maison',  emoji: '🏠', color: '#f59e0b' },
-  { slug: 'informatique',     label: 'Techno',  emoji: '💻', color: '#06b6d4' },
-  { slug: 'sport-loisirs',    label: 'Sport',   emoji: '⚽', color: '#10b981' },
-  { slug: 'services',         label: 'Services',emoji: '🔧', color: '#f97316' },
-  { slug: 'livres-education', label: 'Éduc',    emoji: '📚', color: '#8b5cf6' },
-  { slug: 'bebe-enfant',      label: 'Enfant',  emoji: '👶', color: '#f43f5e' },
+  { slug: 'mode-vetements',   label: 'Mode & Vêtements',   emoji: '👗', color: '#ec4899' },
+  { slug: 'electronique',     label: 'Électronique',       emoji: '📱', color: '#3b82f6' },
+  { slug: 'alimentation',     label: 'Alimentation',       emoji: '🛒', color: '#22c55e' },
+  { slug: 'beaute-sante',     label: 'Beauté & Santé',    emoji: '💄', color: '#a855f7' },
+  { slug: 'maison-deco',      label: 'Maison & Déco',     emoji: '🏠', color: '#f59e0b' },
+  { slug: 'informatique',     label: 'Informatique',       emoji: '💻', color: '#06b6d4' },
+  { slug: 'sport-loisirs',    label: 'Sport & Loisirs',    emoji: '⚽', color: '#10b981' },
+  { slug: 'services',         label: 'Services',           emoji: '🔧', color: '#f97316' },
+  { slug: 'livres-education', label: 'Livres & Éducation', emoji: '📚', color: '#8b5cf6' },
+  { slug: 'bebe-enfant',      label: 'Bébé & Enfant',     emoji: '👶', color: '#f43f5e' },
 ]
 const SHOP_SUGGESTIONS: Record<string, string[]> = {
   'mode-vetements':   ['Mode Dakar', 'Wax & Style', 'Élégance Africa'],
@@ -894,24 +894,33 @@ function RegisterInner() {
                   <div style={{ fontSize: '.72rem', fontWeight: 600, color: 'rgba(255,255,255,.3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.06em' }}>
                     Catégorie <span style={{ fontWeight: 400, textTransform: 'none' }}>(optionnel)</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 7 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
                     {SHOP_CATEGORIES.map(cat => {
                       const active = shopCategory === cat.slug
                       return (
                         <button key={cat.slug} type="button"
                           onClick={() => setShopCategory(active ? '' : cat.slug)}
                           style={{
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                            padding: '10px 4px 8px', borderRadius: 14,
-                            background: active ? `${cat.color}22` : '#64748b',
-                            border: `2px solid ${active ? cat.color : '#64748b'}`,
-                            boxShadow: active ? `0 0 14px ${cat.color}55` : 'none',
+                            position: 'relative', display: 'flex', flexDirection: 'column',
+                            padding: 0, overflow: 'hidden', borderRadius: 16,
+                            background: '#ffffff',
+                            border: `3px solid ${active ? cat.color : 'transparent'}`,
+                            boxShadow: active ? `0 0 0 2px ${cat.color}55, 0 8px 22px ${cat.color}55` : '0 2px 10px rgba(0,0,0,.25)',
                             cursor: 'pointer', transition: 'all .18s', touchAction: 'manipulation',
+                            transform: active ? 'scale(1.02)' : 'scale(1)',
                           }}>
-                          <div style={{ width: 34, height: 34, borderRadius: 10, background: active ? `${cat.color}30` : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .18s' }}>
-                            <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>{cat.emoji}</span>
-                          </div>
-                          <span style={{ fontSize: '.56rem', fontWeight: 700, color: active ? cat.color : '#64748b', textAlign: 'center', lineHeight: 1.2, transition: 'color .18s' }}>{cat.label}</span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`/images/categories/${cat.slug}.webp`} alt={cat.label} loading="lazy"
+                            style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', display: 'block' }} />
+                          <span style={{
+                            padding: '9px 6px', fontSize: '.82rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2,
+                            color: active ? '#ffffff' : '#0f172a',
+                            background: active ? cat.color : '#ffffff',
+                            transition: 'all .18s',
+                          }}>{cat.label}</span>
+                          {active && (
+                            <span style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%', background: cat.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '.9rem', boxShadow: '0 2px 8px rgba(0,0,0,.35)' }}>✓</span>
+                          )}
                         </button>
                       )
                     })}
