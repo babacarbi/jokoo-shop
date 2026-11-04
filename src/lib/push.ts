@@ -10,7 +10,7 @@ export async function sendPushToShop(
   if (!pub || !priv) return
   webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:listekhare@gmail.com', pub, priv)
 
-  const admin = createAdminClient()
+  const admin = await createAdminClient()
   const { data: subs } = await admin
     .from('push_subscriptions')
     .select('id, endpoint, p256dh, auth')
