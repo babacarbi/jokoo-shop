@@ -18,7 +18,39 @@ const SHOP_CATEGORIES = [
   { slug: 'services',         label: 'Services',           emoji: '🔧', color: '#f97316' },
   { slug: 'livres-education', label: 'Livres & Éducation', emoji: '📚', color: '#8b5cf6' },
   { slug: 'bebe-enfant',      label: 'Bébé & Enfant',     emoji: '👶', color: '#f43f5e' },
+  { slug: 'electromenager',   label: 'Électroménager',      emoji: '🧊', color: '#0ea5e9' },
+  { slug: 'phytosanitaire',   label: 'Phytosanitaire & Agriculture', emoji: '🌱', color: '#16a34a' },
+  { slug: 'nettoyage',        label: 'Produits de nettoyage', emoji: '🧽', color: '#eab308' },
 ]
+
+/* Photos défilantes par catégorie (sinon : une seule photo /images/categories/<slug>.webp) */
+const CATEGORY_SLIDES: Record<string, string[]> = {
+  'beaute-sante': [
+    '/images/categories/beaute-sante-2.webp',
+    '/images/categories/beaute-sante-3.webp',
+    '/images/categories/beaute-sante-4.webp',
+    '/images/categories/beaute-sante-1.webp',
+  ],
+}
+
+function CategoryPhoto({ slug, label }: { slug: string; label: string }) {
+  const slides = CATEGORY_SLIDES[slug] ?? [`/images/categories/${slug}.webp`]
+  const [idx, setIdx] = useState(0)
+  useEffect(() => {
+    if (slides.length < 2) return
+    const t = setInterval(() => setIdx(i => (i + 1) % slides.length), 1800)
+    return () => clearInterval(t)
+  }, [slides.length])
+  return (
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', background: '#ffffff' }}>
+      {slides.map((src, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={src} src={src} alt={label} loading="lazy"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: i === idx ? 1 : 0, transition: 'opacity .6s ease' }} />
+      ))}
+    </div>
+  )
+}
 const SHOP_SUGGESTIONS: Record<string, string[]> = {
   'mode-vetements':   ['Mode Dakar', 'Wax & Style', 'Élégance Africa'],
   'electronique':     ['Tech Abidjan', 'Gadgets Africa', 'Electro Store'],
@@ -30,6 +62,9 @@ const SHOP_SUGGESTIONS: Record<string, string[]> = {
   'services':         ['Pro Services', 'Africa Services', 'Expert Zone'],
   'livres-education': ['Librairie Africa', 'Savoir+', 'Édu Store'],
   'bebe-enfant':      ['BébéShop', 'Kids Africa', 'Petits Bonheurs'],
+  'electromenager':   ['Electro Dakar', 'Maison Confort', 'Froid & Clim'],
+  'phytosanitaire':   ['Agro Sahel', 'Phyto Africa', 'Champ Vert'],
+  'nettoyage':        ['Clean Express', 'Brillance Pro', 'Maison Nette'],
 }
 
 /* ── Photos hero mobile : carousel produits 100% locaux ─────────── */
@@ -909,9 +944,7 @@ function RegisterInner() {
                             cursor: 'pointer', transition: 'all .18s', touchAction: 'manipulation',
                             transform: active ? 'scale(1.02)' : 'scale(1)',
                           }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={`/images/categories/${cat.slug}.webp`} alt={cat.label} loading="lazy"
-                            style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', display: 'block' }} />
+                          <CategoryPhoto slug={cat.slug} label={cat.label} />
                           <span style={{
                             padding: '9px 6px', fontSize: '.82rem', fontWeight: 800, textAlign: 'center', lineHeight: 1.2,
                             color: active ? '#ffffff' : '#0f172a',
