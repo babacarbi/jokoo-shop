@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Store, Phone, MapPin, Globe, ShoppingBag, Star, ArrowLeft, Share2 } from 'lucide-react'
 import type { Metadata } from 'next'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 interface Product {
   id: string
@@ -31,12 +32,41 @@ interface Shop {
 
 async function getShopData(slug: string): Promise<{ shop: Shop; products: Product[] } | null> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/boutique/${encodeURIComponent(slug)}`, {
-      cache: 'no-store',
-    })
-    if (!res.ok) return null
-    return res.json()
+    const adminClient = await createAdminClient()
+
+    const { data: shop } = await adminClient
+      .from('shops')
+      .select('id, name, slug, description, city, country, phone, email, whatsapp, website, logo_url, banner_url, status')
+      .eq('slug', slug)
+      .in('status', ['active', 'pending'])
+      .single()
+    if (!shop) return null
+
+    const { data: products } = await adminClient
+      .from('products')
+      .select('id, name, description, price, compare_price, stock, category_id, slug, status')
+      .eq('shop_id', shop.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+
+    const productIds = (products ?? []).map((p) => p.id)
+    let images: Array<{ product_id: string; url: string }> = []
+    if (productIds.length > 0) {
+      const { data: imgData } = await adminClient
+        .from('product_images')
+        .select('product_id, url, position')
+        .in('product_id', productIds)
+        .order('position', { ascending: true })
+      images = imgData ?? []
+    }
+
+    return {
+      shop: shop as Shop,
+      products: (products ?? []).map((p) => ({
+        ...p,
+        img: images.find((i) => i.product_id === p.id)?.url ?? null,
+      })) as Product[],
+    }
   } catch {
     return null
   }
@@ -135,7 +165,8 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
   if (!data) notFound()
 
   const { shop, products } = data
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://marketplace-africa.com'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://marketplace-africa.com')
   const shopUrl = `${appUrl}/boutique/${slug}`
 
   return (

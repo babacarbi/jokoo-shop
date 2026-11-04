@@ -111,6 +111,7 @@ export default function MerchantDashboard() {
       .then(async d => { 
         if (d?.shop) {
           setShop(d.shop)
+          if (d.shop.name) setShopName(d.shop.name)
           const { count } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('shop_id', d.shop.id)
           setProductCount(count || 0)
         }
