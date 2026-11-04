@@ -136,9 +136,9 @@ function RegisterInner() {
 
   const defaultRole = searchParams.get('role') === 'merchant' ? 'merchant' : 'customer'
   const [role, setRole]           = useState<'merchant' | 'customer'>(defaultRole)
-  const [dialCode, setDialCode]   = useState('+221')
-  const [localNum, setLocalNum]   = useState('')
-  const [step, setStep]           = useState<'phone' | 'otp' | 'shop' | 'success'>('phone')
+  const [dialCode, setDialCode]   = useState(searchParams.get('dial') ?? '+221')
+  const [localNum, setLocalNum]   = useState((searchParams.get('phone') ?? '').replace(/[^\d\s]/g, ''))
+  const [step, setStep]           = useState<'phone' | 'otp' | 'pin' | 'shop' | 'success'>('phone')
   const [otpInput, setOtpInput]   = useState('')
   const [pinInput, setPinInput]   = useState('')
   const [otpCode, setOtpCode]     = useState<string | null>(null)
@@ -223,10 +223,14 @@ function RegisterInner() {
     const data = await res.json()
 
     if (!res.ok) {
-      // Code invalide ou expiré → rester sur l'étape OTP, vider le champ
-      setOtpInput('')
-      setError(data.error ?? 'Code incorrect — réessayez.')
       setLoading(false)
+      setPinInput('')
+      // Code WhatsApp invalide/expiré → retour à l'étape du code
+      if (String(data.error ?? '').startsWith('Code invalide')) {
+        setOtpInput('')
+        setStep('otp')
+      }
+      setError(data.error ?? 'Code incorrect — réessayez.')
       return
     }
 
@@ -499,16 +503,31 @@ function RegisterInner() {
               </div>
             </div>
 
+            {/* Retour */}
+            {(step === 'phone' || step === 'pin') && (
+              step === 'phone' ? (
+                <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,.55)', fontSize: '.82rem', fontWeight: 600, textDecoration: 'none', marginBottom: 14 }}>
+                  <ArrowLeft size={15} /> Retour
+                </Link>
+              ) : (
+                <button onClick={() => { setStep('otp'); setError('') }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, color: 'rgba(255,255,255,.55)', fontSize: '.82rem', fontWeight: 600, cursor: 'pointer', marginBottom: 14, fontFamily: 'Inter, sans-serif' }}>
+                  <ArrowLeft size={15} /> Retour
+                </button>
+              )
+            )}
+
             {/* Titre selon étape */}
             <div style={{ marginBottom: step === 'shop' ? 20 : 28 }}>
               <h1 style={{ fontSize: '1.7rem', fontWeight: 900, color: 'white', fontFamily: 'Outfit, sans-serif', marginBottom: 6, lineHeight: 1.2 }}>
                 {step === 'phone' ? (isMerchant ? 'Ouvrir ma boutique 🏷️' : 'Créer mon compte 🛍️')
                   : step === 'otp' ? 'Vérification 📲'
+                  : step === 'pin' ? 'Créez votre code secret 🔐'
                   : 'Votre boutique 🏦'}
               </h1>
               <p style={{ color: 'rgba(255,255,255,.4)', fontSize: '.88rem', lineHeight: 1.5 }}>
                 {step === 'phone' ? (isMerchant ? '2 minutes · Lien boutique unique · Commandes WhatsApp' : 'Inscription par numéro WhatsApp')
                   : step === 'otp' ? `Code envoyé au ${fullPhone}`
+                  : step === 'pin' ? 'Dernière étape avant de créer votre compte'
                   : 'Dernière étape — donnez un nom à votre boutique'}
               </p>
             </div>
@@ -623,6 +642,10 @@ function RegisterInner() {
                   </button>
                 </Link>
 
+                <Link href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,.55)', fontSize: '.82rem', fontWeight: 600, textDecoration: 'none', padding: '4px 0' }}>
+                  Voir les produits sans connexion
+                </Link>
+
                 <p style={{ textAlign: 'center', fontSize: '.72rem', color: 'rgba(255,255,255,.25)', lineHeight: 1.6 }}>
                   En continuant, vous acceptez nos{' '}
                   <Link href="/cgu" style={{ color: 'rgba(249,115,22,.7)', fontWeight: 600 }}>CGU</Link>.
@@ -679,31 +702,11 @@ function RegisterInner() {
                   />
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 600, color: 'rgba(255,255,255,.4)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                    Choisissez votre code PIN (4 chiffres)
-                  </label>
-                  <input className="otp-digit-input"
-                    type="password" inputMode="numeric" pattern="[0-9]*"
-                    placeholder="● ● ● ●"
-                    value={pinInput} maxLength={4}
-                    onChange={e => { setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4)); setError('') }}
-                    autoComplete="new-password"
-                    suppressHydrationWarning
-                  />
-                  <div style={{ fontSize: '.72rem', color: 'rgba(255,255,255,.35)', marginTop: 6 }}>
-                    Il servira à vous connecter la prochaine fois.
-                  </div>
-                </div>
-
                 <button className="reg-btn"
-                  disabled={loading || otpInput.length < 6 || pinInput.length < 4}
-                  onClick={verifyAndCreate}
+                  disabled={loading || otpInput.length < 6}
+                  onClick={() => { setError(''); setPinInput(''); setStep('pin') }}
                   style={{ background: `linear-gradient(135deg, ${accent}, ${isMerchant ? '#ea6b0b' : '#1d55c4'})`, boxShadow: `0 8px 24px ${accent}40`, animation: otpInput.length === 6 ? 'pulseOtp .8s ease' : 'none' }}>
-                  {loading
-                    ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Création...</>
-                    : <><CheckCircle size={18} /> {isMerchant ? 'Créer ma boutique' : 'Créer mon compte'}</>
-                  }
+                  Continuer <ArrowRight size={18} />
                 </button>
 
                 {/* Changer de numéro / Renvoyer le code */}
@@ -736,6 +739,46 @@ function RegisterInner() {
                     <ArrowLeft size={13} /> Changer de numéro
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* ══ ÉTAPE : CODE SECRET (PIN) ══ */}
+            {step === 'pin' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, animation: 'fadeIn .35s ease' }}>
+                <div style={{ background: 'rgba(249,115,22,.08)', border: '1px solid rgba(249,115,22,.2)', borderRadius: 16, padding: '18px 20px' }}>
+                  <div style={{ fontSize: '.95rem', fontWeight: 800, color: 'white', marginBottom: 8 }}>
+                    🔑 À quoi sert ce code ?
+                  </div>
+                  <div style={{ fontSize: '.84rem', color: 'rgba(255,255,255,.6)', lineHeight: 1.6 }}>
+                    Choisissez <strong style={{ color: 'white' }}>4 chiffres</strong> de votre choix.
+                    Ce sera <strong style={{ color: 'white' }}>votre code personnel</strong> pour vous connecter
+                    la prochaine fois, avec votre numéro WhatsApp. Facile à retenir, et ne le partagez avec personne.
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '.78rem', fontWeight: 600, color: 'rgba(255,255,255,.4)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                    Votre code secret (4 chiffres)
+                  </label>
+                  <input className="otp-digit-input"
+                    type="password" inputMode="numeric" pattern="[0-9]*"
+                    placeholder="● ● ● ●"
+                    value={pinInput} maxLength={4} autoFocus
+                    onChange={e => { setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4)); setError('') }}
+                    autoComplete="new-password"
+                    suppressHydrationWarning
+                  />
+                </div>
+
+                <button className="reg-btn"
+                  disabled={loading || pinInput.length < 4}
+                  onClick={verifyAndCreate}
+                  style={{ background: `linear-gradient(135deg, ${accent}, ${isMerchant ? '#ea6b0b' : '#1d55c4'})`, boxShadow: `0 8px 24px ${accent}40` }}>
+                  {loading
+                    ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Création...</>
+                    : <><CheckCircle size={18} /> {isMerchant ? 'Créer ma boutique' : 'Créer mon compte'}</>
+                  }
+                </button>
               </div>
             )}
 

@@ -69,12 +69,13 @@ export default function LoginPage() {
     }
   }, [])
 
-  // Aucun compte marchand : proposer la création, redirection automatique
+  // Aucun compte marchand : proposer la création, redirection automatique (numéro conservé)
+  const merchantCreateUrl = `/register?role=merchant${localNum.trim() ? `&phone=${encodeURIComponent(localNum.trim())}&dial=${encodeURIComponent(dialCode)}` : ''}`
   useEffect(() => {
     if (!noShop) return
-    const t = setTimeout(() => router.push('/register?role=merchant'), 2500)
+    const t = setTimeout(() => router.push(merchantCreateUrl), 2500)
     return () => clearTimeout(t)
-  }, [noShop, router])
+  }, [noShop, router, merchantCreateUrl])
 
   function startCooldown() {
     setCooldown(30)
@@ -202,7 +203,8 @@ export default function LoginPage() {
   const whatsappSub   = role === 'merchant'
     ? 'Accédez à votre espace vendeur'
     : 'Connectez-vous pour suivre vos commandes'
-  const createLink    = role === 'merchant' ? '/register?role=merchant' : '/register?role=buyer'
+  const phoneQs       = localNum.trim() ? `&phone=${encodeURIComponent(localNum.trim())}&dial=${encodeURIComponent(dialCode)}` : ''
+  const createLink    = (role === 'merchant' ? '/register?role=merchant' : '/register?role=buyer') + phoneQs
   const createLabel   = role === 'merchant' ? 'Créer ma boutique' : 'Créer un compte acheteur'
 
   return (
@@ -448,7 +450,7 @@ export default function LoginPage() {
                   <div style={{ fontSize: '.76rem', color: 'rgba(255,255,255,.55)' }}>
                     Redirection vers la création de votre boutique…
                   </div>
-                  <Link href="/register?role=merchant" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 12, background: 'linear-gradient(135deg,#f97316,#ea580c)', color: 'white', fontWeight: 800, fontSize: '.88rem', textDecoration: 'none' }}>
+                  <Link href={merchantCreateUrl} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 46, borderRadius: 12, background: 'linear-gradient(135deg,#f97316,#ea580c)', color: 'white', fontWeight: 800, fontSize: '.88rem', textDecoration: 'none' }}>
                     <Store size={16} /> Créer ma boutique <ArrowRight size={15} />
                   </Link>
                 </div>
