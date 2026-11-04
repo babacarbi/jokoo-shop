@@ -69,6 +69,13 @@ export default function LoginPage() {
     }
   }, [])
 
+  // Mémorise le numéro saisi pour le réafficher dans l'inscription
+  useEffect(() => {
+    if (localNum.trim()) {
+      try { sessionStorage.setItem('jokoo_phone', JSON.stringify({ localNum, dialCode })) } catch {}
+    }
+  }, [localNum, dialCode])
+
   // Aucun compte marchand : proposer la création, redirection automatique (numéro conservé)
   const merchantCreateUrl = `/register?role=merchant${localNum.trim() ? `&phone=${encodeURIComponent(localNum.trim())}&dial=${encodeURIComponent(dialCode)}` : ''}`
   useEffect(() => {

@@ -156,6 +156,26 @@ function RegisterInner() {
   const [shopCreating, setShopCreating] = useState(false)
   const [shopSlug, setShopSlug]         = useState('')   // slug généré après création
 
+  // Reprend le numéro déjà saisi (connexion) pour éviter de le retaper
+  useEffect(() => {
+    if (localNum) return
+    try {
+      const saved = sessionStorage.getItem('jokoo_phone')
+      if (saved) {
+        const { localNum: n, dialCode: d } = JSON.parse(saved)
+        if (n) setLocalNum(n)
+        if (d && !searchParams.get('dial')) setDialCode(d)
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (localNum.trim()) {
+      try { sessionStorage.setItem('jokoo_phone', JSON.stringify({ localNum, dialCode })) } catch {}
+    }
+  }, [localNum, dialCode])
+
   // Auto-défilement photos toutes les 4 secondes
   useEffect(() => {
     const timer = setInterval(() => {
