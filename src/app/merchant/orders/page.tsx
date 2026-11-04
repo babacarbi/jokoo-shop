@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import PushNotificationsToggle from '@/components/PushNotificationsToggle'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -373,6 +374,8 @@ export default function MerchantOrdersPage() {
             >✕</button>
           </div>
         )}
+
+        <PushNotificationsToggle />
 
         {/* Titre Mobile */}
         <div className="mobile-only-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>

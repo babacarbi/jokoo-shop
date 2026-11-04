@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
+import { sendPushToShop } from '@/lib/push'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -101,6 +102,15 @@ export async function POST(req: NextRequest) {
       console.error('Supabase error:', error)
       return NextResponse.json({ error: 'Impossible d\'enregistrer la commande' }, { status: 500 })
     }
+
+    try {
+      await sendPushToShop(shop.id, {
+        title: '🛒 Nouvelle commande !',
+        body: `${product.name} × ${o.quantity} — ${(Number(product.price) * o.quantity).toLocaleString('fr-FR')} FCFA · ${o.buyer_fullname}`,
+        url: '/merchant/orders',
+        tag: `order-${data.id}`,
+      })
+    } catch (e) { console.error('Push error:', e) }
 
     return NextResponse.json({
       success: true,
