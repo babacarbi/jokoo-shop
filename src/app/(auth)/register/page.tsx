@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { askPushPermission, subscribePush } from '@/lib/pushClient'
 import { ShoppingBag, Store, Loader2, CheckCircle, ArrowLeft, RefreshCw, ArrowRight, Sparkles } from 'lucide-react'
 
 /* ── Catégories boutique ─────────────────────────────────────────── */
@@ -335,6 +336,8 @@ function RegisterInner() {
   // ── Création boutique + affichage lien de partage ─────────────────────
   async function createShopAndGo() {
     if (!shopName.trim()) { setError('Donnez un nom à votre boutique'); return }
+    // Notifications push activées par défaut à l'inscription (demande lancée dans le clic)
+    const permissionAsk = askPushPermission()
     setShopCreating(true); setError('')
     const cleaned = fullPhone.replace(/\s+/g, '')
     const res = await fetch('/api/merchant/shop', {
@@ -346,6 +349,8 @@ function RegisterInner() {
     const d = await res.json()
     setShopCreating(false)
     if (!res.ok) { setError(d.error ?? 'Erreur création boutique'); return }
+    await permissionAsk
+    await subscribePush()
     // Stocker le slug et afficher l'écran de succès avec le lien
     setShopSlug(d.slug ?? shopName.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''))
     setStep('success')
