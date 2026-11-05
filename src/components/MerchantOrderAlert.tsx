@@ -29,6 +29,38 @@ export default function MerchantOrderAlert() {
   }
 
   useEffect(() => {
+    // Titre d'onglet clignotant + badge icône tant que la commande n'est pas vue
+    const base = document.title
+    let timer: any = null
+    let pending = 0
+    const stopFlash = () => {
+      if (timer) clearInterval(timer)
+      timer = null; pending = 0
+      document.title = base
+      try { (navigator as any).clearAppBadge?.() } catch {}
+    }
+    const startFlash = () => {
+      pending++
+      try { (navigator as any).setAppBadge?.(pending) } catch {}
+      if (timer) return
+      let on = false
+      timer = setInterval(() => {
+        on = !on
+        document.title = on ? '🔴 Nouvelle commande !' : base
+      }, 900)
+    }
+    const onNew = () => { if (document.hidden) startFlash() }
+    const onVis = () => { if (!document.hidden) stopFlash() }
+    window.addEventListener('jokoo:new-order', onNew)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener('jokoo:new-order', onNew)
+      document.removeEventListener('visibilitychange', onVis)
+      stopFlash()
+    }
+  }, [])
+
+  useEffect(() => {
     let stop = false
     async function check() {
       try {

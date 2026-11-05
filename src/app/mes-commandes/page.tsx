@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronRight, ShoppingBag } from 'lucide-react'
 import { getOrderByTrackingToken } from '@/app/actions'
@@ -45,10 +46,15 @@ function ago(d: string) {
  */
 export default function MesCommandesPage() {
   const [rows, setRows] = useState<{ saved: Saved; live: Live | null }[] | null>(null)
-  const [isMerchant, setIsMerchant] = useState(false)
+  const router = useRouter()
+  const [isMerchant, setIsMerchant] = useState<boolean | null>(null)
 
+  // Marchand connecté : cet onglet affiche directement les commandes de sa boutique
   useEffect(() => {
-    createClient().auth.getUser().then(({ data: { user } }) => setIsMerchant(!!user))
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (user) router.replace('/merchant/orders')
+      else setIsMerchant(false)
+    })
   }, [])
 
   useEffect(() => {
@@ -71,12 +77,7 @@ export default function MesCommandesPage() {
       </header>
 
       <main style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 560, margin: '0 auto' }}>
-        {isMerchant && (
-          <Link href="/merchant/orders" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: '14px 16px', textDecoration: 'none', color: '#9a3412', fontWeight: 800, fontSize: '0.9rem' }}>
-            <ShoppingBag size={20} /> Vous êtes marchand : voir les commandes reçues par ma boutique
-            <ChevronRight size={18} style={{ marginLeft: 'auto' }} />
-          </Link>
-        )}
+        {isMerchant === null && <p style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>Chargement…</p>}
         {rows === null && <p style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>Chargement…</p>}
 
         {rows?.length === 0 && (
