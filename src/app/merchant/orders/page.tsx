@@ -166,6 +166,12 @@ export default function MerchantOrdersPage() {
     })
   }, [])
 
+  useEffect(() => {
+    const h = () => { loadOrders(true) }
+    window.addEventListener('jokoo:new-order', h)
+    return () => window.removeEventListener('jokoo:new-order', h)
+  }, [])
+
   async function updateStatus(id: string, status: GuestOrderStatus) {
     setUpdating(id)
     setUpdateError(null)
