@@ -1,6 +1,6 @@
 {
-  "name": "MarketPlace Africa",
-  "short_name": "MarketPlace",
+  "name": "Jokoo",
+  "short_name": "Jokoo",
   "description": "La marketplace africaine — Achetez et vendez en toute confiance",
   "id": "/",
   "start_url": "/",
@@ -14,31 +14,31 @@
   "categories": ["shopping", "lifestyle", "business"],
   "icons": [
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "180x180",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/icon-512.jpg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
-      "label": "MarketPlace Africa — Accueil"
+      "label": "Jokoo — Accueil"
     }
   ],
   "shortcuts": [
@@ -47,21 +47,21 @@
       "short_name": "Boutiques",
       "description": "Voir toutes les boutiques",
       "url": "/boutiques",
-      "icons": [{ "src": "/icon-512.jpg", "sizes": "512x512" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
     },
     {
       "name": "Mon compte",
       "short_name": "Compte",
       "description": "Accéder à mon compte",
       "url": "/login",
-      "icons": [{ "src": "/icon-512.jpg", "sizes": "512x512" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
     },
     {
       "name": "Mon tableau de bord",
       "short_name": "Dashboard",
       "description": "Espace marchand",
       "url": "/merchant/dashboard",
-      "icons": [{ "src": "/icon-512.jpg", "sizes": "512x512" }]
+      "icons": [{ "src": "/icon-512.png", "sizes": "512x512" }]
     }
   ],
   "related_applications": [],
