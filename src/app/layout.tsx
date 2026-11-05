@@ -67,7 +67,7 @@ export const metadata: Metadata = {
       { url: '/icon-512.jpg', sizes: '192x192', type: 'image/jpeg' },
     ],
     apple: [
-      { url: '/icon-512.jpg', sizes: '180x180', type: 'image/jpeg' },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
     shortcut: '/icon-512.jpg',
   },
@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Jokoo" />
-        <link rel="apple-touch-icon" href="/icon-512.jpg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         {/* PWA Android */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="application-name" content="Jokoo" />

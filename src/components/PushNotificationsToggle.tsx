@@ -10,7 +10,7 @@ function urlBase64ToUint8Array(base64: string) {
 
 type State = 'loading' | 'unsupported' | 'ios-install' | 'off' | 'on' | 'denied'
 
-export default function PushNotificationsToggle() {
+export default function PushNotificationsToggle({ silent = false }: { silent?: boolean }) {
   const [state, setState] = useState<State>('loading')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -21,14 +21,39 @@ export default function PushNotificationsToggle() {
     if (isIOS && !standalone) return setState('ios-install')
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return setState('unsupported')
     if (Notification.permission === 'denied') return setState('denied')
-    navigator.serviceWorker.register('/sw.js').then(reg => reg.pushManager.getSubscription()).then(sub => {
-      setState(sub && Notification.permission === 'granted' ? 'on' : 'off')
+    const userOff = localStorage.getItem('jokoo_push_off') === '1'
+    let cleanup: (() => void) | undefined
+    navigator.serviceWorker.register('/sw.js').then(reg => reg.pushManager.getSubscription()).then(async sub => {
+      const granted = Notification.permission === 'granted'
+      setState(sub && granted ? 'on' : 'off')
+      if (userOff || !silent) return
+      if (granted) {
+        // Déjà autorisé : on (ré)enregistre l'abonnement automatiquement
+        enable(true)
+      } else {
+        // Activation par défaut : le navigateur exige un geste -> au premier toucher
+        const once = () => { enable(true) }
+        document.addEventListener('click', once, { once: true })
+        document.addEventListener('touchend', once, { once: true })
+        cleanup = () => {
+          document.removeEventListener('click', once)
+          document.removeEventListener('touchend', once)
+        }
+      }
     }).catch(() => setState('off'))
+    return () => cleanup?.()
   }, [])
 
-  async function enable() {
+  useEffect(() => {
+    const h = () => setState('on')
+    window.addEventListener('jokoo:push-on', h)
+    return () => window.removeEventListener('jokoo:push-on', h)
+  }, [])
+
+  async function enable(auto = false) {
     setBusy(true); setErr('')
     try {
+      localStorage.removeItem('jokoo_push_off')
       const perm = await Notification.requestPermission()
       if (perm !== 'granted') { setState('denied'); return }
       const reg = await navigator.serviceWorker.register('/sw.js')
@@ -43,6 +68,7 @@ export default function PushNotificationsToggle() {
       })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Erreur serveur')
       setState('on')
+      window.dispatchEvent(new CustomEvent('jokoo:push-on'))
     } catch (e: any) {
       setErr(e?.message || 'Activation impossible')
     } finally { setBusy(false) }
@@ -60,11 +86,12 @@ export default function PushNotificationsToggle() {
         })
         await sub.unsubscribe()
       }
+      localStorage.setItem('jokoo_push_off', '1')
       setState('off')
     } finally { setBusy(false) }
   }
 
-  if (state === 'loading') return null
+  if (silent || state === 'loading') return null
 
   const box: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 14,
@@ -87,7 +114,7 @@ export default function PushNotificationsToggle() {
         {state === 'ios-install' && <>Sur iPhone : touchez <strong>Partager</strong> puis <strong>« Sur l’écran d’accueil »</strong>, ouvrez Jokoo depuis l’icône, puis activez les notifications.</>}
         {err && <div style={{ color: '#dc2626', marginTop: 4 }}>{err}</div>}
       </div>
-      {state === 'off' && <button style={btn} onClick={enable} disabled={busy}>{busy ? '…' : 'Activer'}</button>}
+      {state === 'off' && <button style={btn} onClick={() => enable()} disabled={busy}>{busy ? '…' : 'Activer'}</button>}
       {state === 'on' && <button style={{ ...btn, background: '#fff', color: '#6b7280', border: '1px solid #d1d5db' }} onClick={disable} disabled={busy}>Désactiver</button>}
     </div>
   )
