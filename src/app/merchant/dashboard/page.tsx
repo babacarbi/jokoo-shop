@@ -9,6 +9,7 @@ import {
   LogOut, TrendingUp, TrendingDown, Plus, Eye, ChevronRight,
   Star, DollarSign, Clock, Bell, X, MapPin, Phone, Camera, Zap,
 } from 'lucide-react'
+import { getMyOrdersAction } from '@/app/actions'
 
 /* ── Score de complétion boutique ────────────────────────────────── */
 interface ShopData {
@@ -65,25 +66,30 @@ const navItems = [
   { href: '/merchant/settings',     icon: Settings,        label: 'Paramètres' },
 ]
 
-const stats = [
-  { label: "Chiffre d'affaires", value: '840 000 F', change: '+18%', up: true,  icon: DollarSign,  color: 'hsl(158 64% 40%)', bg: 'hsl(158 64% 96%)' },
-  { label: 'Commandes reçues',   value: '34',        change: '+5',   up: true,  icon: ShoppingBag, color: 'hsl(221 83% 53%)', bg: 'hsl(221 83% 96%)' },
-  { label: 'Produits publiés',   value: '12',        change: '+2',   up: true,  icon: Package,     color: 'hsl(25 95% 53%)',  bg: 'hsl(25 95% 96%)' },
-  { label: 'En attente envoi',   value: '3',         change: '',     up: false, icon: Clock,       color: 'hsl(38 92% 50%)',  bg: 'hsl(48 96% 95%)' },
-]
+/* Données réelles (commandes + produits de la boutique), actualisées automatiquement */
+interface LiveOrder { id: string; product_id: string | null; product_name: string; price: number; quantity: number; buyer_fullname?: string; buyer_prenom?: string; buyer_nom?: string; status: string; created_at: string }
+interface LiveProduct { id: string; name: string; price: number; stock: number; category_id: string | null; product_images?: { url: string }[] }
 
-const recentOrders = [
-  { id: '#1042', customer: 'Moussa D.',   product: 'Robe Wax Premium',  amount: '45 000 F', status: 'new',        date: 'Il y a 12 min' },
-  { id: '#1038', customer: 'Aïssatou B.', product: 'Boubou Brodé',      amount: '75 000 F', status: 'processing', date: 'Il y a 2h' },
-  { id: '#1035', customer: 'Ibrahim K.',  product: 'Tissu Wax 6 yards', amount: '18 000 F', status: 'delivered',  date: 'Hier' },
-  { id: '#1030', customer: 'Fatou S.',    product: 'Ensemble Pagne',    amount: '95 000 F', status: 'cancelled',  date: 'Hier' },
-]
-
-const topProducts = [
-  { name: 'Robe Wax Premium',  sales: 34, revenue: '1 530 000 F', emoji: '👗', stock: 12 },
-  { name: 'Boubou Brodé',      sales: 12, revenue: '900 000 F',   emoji: '🪡', stock: 5 },
-  { name: 'Chemise Africaine', sales: 28, revenue: '896 000 F',   emoji: '👔', stock: 20 },
-]
+function fmtF(n: number) { return n.toLocaleString('fr-FR') + ' F' }
+function shortName(o: LiveOrder) {
+  const full = (o.buyer_fullname || `${o.buyer_prenom ?? ''} ${o.buyer_nom ?? ''}`).trim()
+  const p = full.split(/\s+/)
+  return p.length > 1 ? `${p[0]} ${p[1].charAt(0).toUpperCase()}.` : (p[0] || 'Client')
+}
+function dashStatus(s: string) {
+  if (s === 'new') return 'new'
+  if (s === 'cancelled') return 'cancelled'
+  if (s === 'delivered_paid' || s === 'delivered_unpaid' || s === 'delivered') return 'delivered'
+  return 'processing'
+}
+function ago(d: string) {
+  const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000)
+  if (m < 1) return "À l'instant"
+  if (m < 60) return `Il y a ${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `Il y a ${h} h`
+  return `Il y a ${Math.floor(h / 24)} j`
+}
 
 const statusMap: Record<string, { label: string; color: string; bg: string }> = {
   new:        { label: 'Nouveau',  color: 'hsl(221 83% 45%)', bg: 'hsl(221 83% 96%)' },
@@ -99,6 +105,9 @@ export default function MerchantDashboard() {
   const [shop, setShop]           = useState<ShopData | null>(null)
   const [productCount, setProductCount] = useState<number | null>(null)
   const [dismissed, setDismissed] = useState<string[]>([])
+  const [orders, setOrders] = useState<LiveOrder[]>([])
+  const [products, setProducts] = useState<LiveProduct[]>([])
+  const [catNames, setCatNames] = useState<Record<string, string>>({})
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   useEffect(() => {
@@ -122,6 +131,32 @@ export default function MerchantDashboard() {
     if (saved) setDismissed(JSON.parse(saved))
   }, [])
 
+  // Commandes + produits réels, rafraîchis toutes les 30 s et à chaque nouvelle commande
+  useEffect(() => {
+    let stop = false
+    async function load() {
+      try {
+        const o = (await getMyOrdersAction()) as unknown as LiveOrder[]
+        if (!stop) setOrders(o)
+      } catch {}
+      try {
+        const r = await fetch('/api/merchant/shop', { credentials: 'include' })
+        const d = r.ok ? await r.json() : null
+        if (!d?.shop?.id || stop) return
+        const { data: prods } = await supabase.from('products')
+          .select('id, name, price, stock, category_id, product_images(url)')
+          .eq('shop_id', d.shop.id).neq('status', 'archived')
+        if (!stop) setProducts((prods ?? []) as unknown as LiveProduct[])
+        const { data: cats } = await supabase.from('categories').select('id, name')
+        if (!stop && cats) setCatNames(Object.fromEntries(cats.map((c: any) => [c.id, c.name])))
+      } catch {}
+    }
+    load()
+    const t = setInterval(load, 30000)
+    window.addEventListener('jokoo:new-order', load)
+    return () => { stop = true; clearInterval(t); window.removeEventListener('jokoo:new-order', load) }
+  }, [])
+
   function dismissNudge(id: string) {
     const next = [...dismissed, id]
     setDismissed(next)
@@ -134,6 +169,41 @@ export default function MerchantDashboard() {
   }
 
   const score = computeScore(shop)
+
+  /* Statistiques réelles */
+  const validOrders = orders.filter(o => o.status !== 'cancelled')
+  const revenue = orders.filter(o => String(o.status).startsWith('delivered')).reduce((s, o) => s + Number(o.price || 0), 0)
+  const pending = orders.filter(o => ['new', 'processing'].includes(o.status)).length
+  const stats = [
+    { label: "Chiffre d'affaires", value: fmtF(revenue),                    change: '', up: true,  icon: DollarSign,  color: 'hsl(158 64% 40%)', bg: 'hsl(158 64% 96%)' },
+    { label: 'Commandes reçues',   value: String(validOrders.length),       change: '', up: true,  icon: ShoppingBag, color: 'hsl(221 83% 53%)', bg: 'hsl(221 83% 96%)' },
+    { label: 'Produits publiés',   value: String(products.length || productCount || 0), change: '', up: true, icon: Package, color: 'hsl(25 95% 53%)', bg: 'hsl(25 95% 96%)' },
+    { label: 'En attente envoi',   value: String(pending),                  change: '', up: false, icon: Clock,       color: 'hsl(38 92% 50%)',  bg: 'hsl(48 96% 95%)' },
+  ]
+  const recentOrders = orders.slice(0, 5).map(o => ({
+    id: '#' + String(o.id).slice(0, 4).toUpperCase(),
+    customer: shortName(o),
+    product: o.product_name,
+    amount: fmtF(Number(o.price || 0)),
+    status: dashStatus(o.status),
+    date: ago(o.created_at),
+  }))
+
+  /* Top produits : le meilleur produit de chaque catégorie (par nombre de ventes) */
+  const salesByProduct: Record<string, number> = {}
+  orders.filter(o => o.status !== 'cancelled' && o.product_id).forEach(o => {
+    salesByProduct[o.product_id!] = (salesByProduct[o.product_id!] || 0) + (o.quantity || 1)
+  })
+  const byCat: Record<string, LiveProduct[]> = {}
+  products.forEach(p => { (byCat[p.category_id ?? 'none'] ||= []).push(p) })
+  const topProducts = Object.entries(byCat).map(([cid, list]) => {
+    const best = [...list].sort((a, b) => (salesByProduct[b.id] || 0) - (salesByProduct[a.id] || 0))[0]
+    return {
+      category: cid === 'none' ? 'Autres' : (catNames[cid] ?? 'Autres'),
+      name: best.name, stock: best.stock, sales: salesByProduct[best.id] || 0,
+      img: best.product_images?.[0]?.url ?? null,
+    }
+  }).sort((a, b) => b.sales - a.sales).slice(0, 6)
 
   /* Nudges à afficher selon ce qui manque */
   const nudges = [
@@ -278,6 +348,9 @@ export default function MerchantDashboard() {
                 <Link href="/merchant/orders" className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'hsl(221 83% 53%)', minHeight: 'auto', padding: '4px 10px' }}>Voir tout</Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {recentOrders.length === 0 && (
+                  <div style={{ fontSize: '0.78rem', color: 'hsl(215 16% 55%)', padding: '8px 0' }}>Aucune commande pour le moment. Elles apparaîtront ici en temps réel.</div>
+                )}
                 {recentOrders.map(order => {
                   const sc = statusMap[order.status]
                   return (
@@ -304,15 +377,21 @@ export default function MerchantDashboard() {
                 <Link href="/merchant/products" className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', color: 'hsl(221 83% 53%)', minHeight: 'auto', padding: '4px 10px' }}>Gérer</Link>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {topProducts.length === 0 && (
+                  <div style={{ fontSize: '0.78rem', color: 'hsl(215 16% 55%)', padding: '8px 0' }}>Ajoutez vos produits : les meilleurs de chaque catégorie apparaîtront ici.</div>
+                )}
                 {topProducts.map((p, i) => (
-                  <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div key={p.category + p.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 26, height: 26, borderRadius: 7, background: i === 0 ? 'hsl(38 92% 95%)' : 'hsl(210 17% 95%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, color: i === 0 ? 'hsl(38 92% 40%)' : 'hsl(215 16% 55%)', flexShrink: 0 }}>
                       {i + 1}
                     </div>
-                    <span style={{ fontSize: '1.5rem' }}>{p.emoji}</span>
+                    {p.img
+                      ? <img src={p.img} alt={p.name} style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid hsl(214 32% 91%)' }} />
+                      : <div style={{ width: 44, height: 44, borderRadius: 10, background: 'hsl(210 17% 95%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Package size={20} color="hsl(215 16% 60%)" /></div>}
                     <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'hsl(221 83% 45%)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{p.category}</div>
                       <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'hsl(222 47% 11%)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'hsl(215 16% 55%)' }}>{p.sales} ventes · stock: {p.stock}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'hsl(215 16% 55%)' }}>{p.sales} vente{p.sales > 1 ? 's' : ''} · stock : {p.stock}</div>
                     </div>
                   </div>
                 ))}
