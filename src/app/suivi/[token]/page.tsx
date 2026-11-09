@@ -1,10 +1,37 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getOrderByTrackingToken } from '@/app/actions'
-import { Package, CheckCircle, Truck, ClipboardList, XCircle, Clock, Home } from 'lucide-react'
+import { Package, CheckCircle, Truck, ClipboardList, XCircle, Clock, Home, ArrowLeft } from 'lucide-react'
+
+/** Barre d'application native : fixe en haut, respecte l'encoche (safe-area) */
+function AppBar({ title }: { title: string }) {
+  const router = useRouter()
+  return (
+    <header style={{
+      position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.96)',
+      backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+      borderBottom: '1px solid #e5e7eb', paddingTop: 'env(safe-area-inset-top, 0px)',
+    }}>
+      <div style={{ height: 52, display: 'grid', gridTemplateColumns: '48px 1fr 48px', alignItems: 'center', padding: '0 6px' }}>
+        <button onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))} aria-label="Retour"
+          style={{ width: 40, height: 40, borderRadius: 12, border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', minHeight: 'auto' }}>
+          <ArrowLeft size={22} color="#111827" />
+        </button>
+        <h1 style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.02rem', color: '#111827', margin: 0, textAlign: 'center' }}>{title}</h1>
+        <Link href="/" aria-label="Accueil Jokoo" style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', justifySelf: 'end' }}>
+          <img src="/apple-touch-icon.png" alt="Jokoo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
+        </Link>
+      </div>
+    </header>
+  )
+}
+
+/** Espace réservé sous le contenu pour ne pas être masqué par la barre du bas */
+const NAV_SPACE = 'calc(var(--bottom-nav-height, 60px) + var(--safe-bottom, 0px) + 28px)'
+const PAGE: React.CSSProperties = { minHeight: '100vh', background: '#f3f4f6', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: NAV_SPACE }
 
 type GuestOrderStatus =
   | 'new'
@@ -192,18 +219,24 @@ export default function SuiviPage() {
 
   useEffect(() => {
     if (!token) return
-    getOrderByTrackingToken(token as string).then(data => {
+    let stop = false
+    const load = () => getOrderByTrackingToken(token as string).then(data => {
+      if (stop) return
       if (!data) setNotFound(true)
       else setOrder(data as OrderData)
       setLoading(false)
     })
+    load()
+    const t = setInterval(load, 15000) // mise à jour automatique réelle
+    return () => { stop = true; clearInterval(t) }
   }, [token])
 
   // ── Chargement ──
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>
-        <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+      <div style={PAGE}>
+        <AppBar title="Suivi de commande" />
+        <div style={{ textAlign: 'center', color: '#9ca3af', padding: '80px 20px' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📦</div>
           <div style={{ fontWeight: 600 }}>Chargement de votre suivi…</div>
         </div>
@@ -214,18 +247,21 @@ export default function SuiviPage() {
   // ── Non trouvé ──
   if (notFound || !order) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'Inter, system-ui, sans-serif' }}>
-        <div style={{ background: 'white', borderRadius: 20, padding: 36, textAlign: 'center', maxWidth: 360, width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-          <div style={{ fontSize: '3rem', marginBottom: 12 }}>🔍</div>
-          <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: '1.2rem', color: '#111827', marginBottom: 8 }}>
-            Commande introuvable
+      <div style={PAGE}>
+        <AppBar title="Suivi de commande" />
+        <div style={{ padding: 16, maxWidth: 440, margin: '0 auto' }}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 32, textAlign: 'center', border: '1px solid #e5e7eb' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>🔍</div>
+            <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: '1.2rem', color: '#111827', marginBottom: 8 }}>
+              Commande introuvable
+            </div>
+            <p style={{ color: '#6b7280', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 20 }}>
+              Ce lien de suivi n&apos;existe pas ou a expiré. Vérifiez le lien reçu par WhatsApp.
+            </p>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#2D6BE4', color: 'white', padding: '14px', borderRadius: 14, fontWeight: 700, textDecoration: 'none', fontSize: '0.92rem' }}>
+              <Home size={17} /> Retour à l&apos;accueil
+            </Link>
           </div>
-          <p style={{ color: '#6b7280', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 20 }}>
-            Ce lien de suivi n&apos;existe pas ou a expiré. Vérifiez le lien reçu par WhatsApp.
-          </p>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2D6BE4', color: 'white', padding: '12px 24px', borderRadius: 12, fontWeight: 700, textDecoration: 'none', fontSize: '0.88rem' }}>
-            <Home size={16} /> Retour à l&apos;accueil
-          </Link>
         </div>
       </div>
     )
@@ -234,23 +270,26 @@ export default function SuiviPage() {
   // ── Annulée ──
   if (order.status === 'cancelled') {
     return (
-      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'Inter, system-ui, sans-serif' }}>
-        <div style={{ background: 'white', borderRadius: 20, padding: 36, textAlign: 'center', maxWidth: 380, width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-          <div style={{ width: 64, height: 64, background: '#fef2f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <XCircle size={32} color="#dc2626" />
+      <div style={PAGE}>
+        <AppBar title="Suivi de commande" />
+        <div style={{ padding: 16, maxWidth: 440, margin: '0 auto' }}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 32, textAlign: 'center', border: '1px solid #e5e7eb' }}>
+            <div style={{ width: 64, height: 64, background: '#fef2f2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <XCircle size={32} color="#dc2626" />
+            </div>
+            <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: '1.2rem', color: '#111827', marginBottom: 8 }}>
+              Commande annulée
+            </div>
+            <p style={{ color: '#6b7280', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 8 }}>
+              {order.buyer_prenom ?? order.buyer_fullname}, votre commande <strong>{order.product_name}</strong> auprès de <strong>{order.shop_name}</strong> a été annulée.
+            </p>
+            <p style={{ color: '#9ca3af', fontSize: '0.78rem', marginBottom: 20 }}>
+              Contactez le marchand pour plus d&apos;informations.
+            </p>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#2D6BE4', color: 'white', padding: '14px', borderRadius: 14, fontWeight: 700, textDecoration: 'none', fontSize: '0.92rem' }}>
+              <Home size={17} /> Retour à l&apos;accueil
+            </Link>
           </div>
-          <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: '1.2rem', color: '#111827', marginBottom: 8 }}>
-            Commande annulée
-          </div>
-          <p style={{ color: '#6b7280', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 8 }}>
-            {order.buyer_prenom ?? order.buyer_fullname}, votre commande <strong>{order.product_name}</strong> auprès de <strong>{order.shop_name}</strong> a été annulée.
-          </p>
-          <p style={{ color: '#9ca3af', fontSize: '0.78rem', marginBottom: 20 }}>
-            Contactez le marchand pour plus d&apos;informations.
-          </p>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f3f4f6', color: '#374151', padding: '12px 24px', borderRadius: 12, fontWeight: 700, textDecoration: 'none', fontSize: '0.88rem' }}>
-            <Home size={16} /> Retour à l&apos;accueil
-          </Link>
         </div>
       </div>
     )
@@ -265,32 +304,21 @@ export default function SuiviPage() {
     : STEPS.slice(0, 3)
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(180deg, #0a0f1e 0%, #1e293b 40%, #f1f5f9 40%)',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      padding: '0 0 40px',
-    }}>
+    <div style={PAGE}>
 
-      {/* ── Header ── */}
-      <div style={{ padding: '24px 20px 40px', position: 'relative' }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontSize: '0.8rem', marginBottom: 20 }}>
-          <Home size={14} /> Jokoo
-        </Link>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
-            Suivi de commande
-          </div>
-          <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: '1.5rem', color: 'white', marginBottom: 4 }}>
-            {order.buyer_prenom ?? order.buyer_fullname ?? 'Votre commande'}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>
-            Boutique : {order.shop_name}
-          </div>
+      <AppBar title="Suivi de commande" />
+
+      {/* ── Bandeau d'accueil ── */}
+      <div style={{ maxWidth: 440, margin: '0 auto', padding: '16px 16px 4px' }}>
+        <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 900, fontSize: '1.3rem', color: '#111827' }}>
+          Bonjour {order.buyer_prenom ?? order.buyer_fullname ?? ''} 👋
+        </div>
+        <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: 2 }}>
+          Boutique : <strong style={{ color: '#374151' }}>{order.shop_name}</strong>
         </div>
       </div>
 
-      <div style={{ maxWidth: 440, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: 440, margin: '0 auto', padding: '10px 16px 0' }}>
 
         {/* ── Carte statut actuel ── */}
         <div style={{

@@ -127,7 +127,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   function handlePlus() { cartUpdateQty(p!.id, qty + 1) }
 
   return (
-    <div style={{ background: '#f3f4f6', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ background: '#f3f4f6', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: 'calc(var(--bottom-nav-height, 60px) + var(--safe-bottom, 0px) + 24px)' }}>
 
       {/* NAVBAR */}
       <div style={{ background: 'white', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e5e7eb' }}>
