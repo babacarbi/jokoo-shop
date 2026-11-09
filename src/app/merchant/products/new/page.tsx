@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -13,6 +13,7 @@ import CatalogModal from '@/components/merchant/CatalogModal'
 import { CatalogProduct } from '@/types'
 
 interface ImagePreview { file: File; url: string }
+const DRAFT_KEY = 'jokoo_product_draft'
 
 const categories = [
   { id: 'c6272313-cad1-4679-aba5-59dbcf9ad3b5', name: 'Mode & Vêtements' }, 
@@ -45,6 +46,38 @@ export default function NewProductPage() {
 
   function update(field: string, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  // ── Brouillon automatique (survit à l'actualisation) ─────
+  const [draftSavedAt, setDraftSavedAt] = useState('')
+  const restored = useRef(false)
+  const skipSave = useRef(false)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (raw) setForm(prev => ({ ...prev, ...JSON.parse(raw) }))
+    } catch {}
+    restored.current = true
+  }, [])
+
+  useEffect(() => {
+    if (!restored.current || skipSave.current) return
+    const t = setTimeout(() => {
+      const hasData = Object.entries(form).some(([k, v]) => k !== 'status' && v)
+      if (!hasData) return
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(form))
+        setDraftSavedAt(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
+      } catch {}
+    }, 500)
+    return () => clearTimeout(t)
+  }, [form])
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY) } catch {}
+    setForm({ name: '', description: '', price: '', compare_price: '', stock: '', sku: '', category_id: '', status: 'draft', weight: '' })
+    setDraftSavedAt('')
   }
 
   function handleCatalogSelect(product: CatalogProduct) {
@@ -178,6 +211,8 @@ export default function NewProductPage() {
       }
 
       // Afficher le toast de succès puis rediriger
+      try { localStorage.removeItem(DRAFT_KEY) } catch {}
+      skipSave.current = true
       setSuccess(finalStatus === 'active' ? '✅ Produit publié avec succès !' : '💾 Brouillon sauvegardé !')
       setTimeout(() => router.push('/merchant/products'), 1800)
     } catch {
@@ -230,8 +265,8 @@ export default function NewProductPage() {
           <div style={{ flex: 1, minWidth: 0, padding: '0 8px' }}>
             <h2 className="merchant-mobile-header-title">Nouveau produit</h2>
           </div>
-          <button type="button" onClick={(e) => handleSubmit(e as unknown as React.FormEvent, 'active')} className="btn btn-primary btn-sm" disabled={loading} style={{ padding: '8px 12px', minHeight: 38 }}>
-            {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+          <button type="button" onClick={(e) => handleSubmit(e as unknown as React.FormEvent, 'active')} className="btn btn-primary btn-sm" disabled={loading} style={{ padding: '8px 14px', minHeight: 38, fontWeight: 800, borderRadius: 10, gap: 6 }}>
+            {loading ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Enregistrer
           </button>
         </div>
 
@@ -440,6 +475,25 @@ export default function NewProductPage() {
               </div>
             </div>
           </form>
+          <div style={{ height: 150 }} />
+        </div>
+
+        {/* Barre d'actions fixe (style Shopify / Jumia) */}
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(var(--bottom-nav-height, 64px) + var(--safe-bottom, 0px))', zIndex: 900, background: 'white', borderTop: '1px solid hsl(214 32% 91%)', boxShadow: '0 -4px 16px rgba(0,0,0,0.08)', padding: '10px 14px' }}>
+          {draftSavedAt && (
+            <div style={{ fontSize: '0.7rem', color: '#16a34a', textAlign: 'center', marginBottom: 6, fontWeight: 600 }}>
+              ✓ Brouillon enregistré automatiquement à {draftSavedAt}
+              <button type="button" onClick={clearDraft} style={{ marginLeft: 8, background: 'none', border: 'none', color: '#dc2626', fontSize: '0.7rem', textDecoration: 'underline' }}>Effacer</button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10, maxWidth: 1000, margin: '0 auto' }}>
+            <button type="button" disabled={loading} onClick={(e) => handleSubmit(e as unknown as React.FormEvent, 'draft')} style={{ flex: 1, minHeight: 50, borderRadius: 12, border: '2px solid #2563eb', background: 'white', color: '#2563eb', fontWeight: 700, fontSize: '0.9rem' }}>
+              Brouillon
+            </button>
+            <button type="button" disabled={loading} onClick={(e) => handleSubmit(e as unknown as React.FormEvent, 'active')} style={{ flex: 2, minHeight: 50, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white', fontWeight: 800, fontSize: '1rem', boxShadow: '0 6px 16px rgba(37,99,235,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              {loading ? <><Loader2 size={18} className="animate-spin" /> Enregistrement...</> : <><Save size={18} /> Enregistrer et publier</>}
+            </button>
+          </div>
         </div>
       </main>
 
