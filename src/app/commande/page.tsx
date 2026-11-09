@@ -159,29 +159,9 @@ export default function CommandePage() {
         setStatus('success')
         clearCart()
 
-        // Si un seul marchand, on peut tenter une redirection automatique (ou laisser le client cliquer)
-        const phones = Object.keys(groups)
-        if (phones.length === 1 && phones[0] !== 'Inconnu') {
-          const phone = phones[0]
-          const g = groups[phone]
-          
-          let text = `*Nouvelle commande depuis Jokoo* 🛍️\n\n`
-          text += `👤 *Client* : ${fullName.trim()}\n`
-          text += `📞 *Tél* : ${selectedCountry.dial} ${phoneNum.trim()}\n`
-          text += `🌍 *Pays* : ${selectedCountry.name}\n\n`
-          text += `*Produits* :\n`
-          g.items.forEach(i => {
-            text += `- ${i.quantity}x ${i.name} (${fmt(i.price)})\n`
-          })
-          text += `\n💰 *Total* : ${fmt(g.total)}\n`
-
-          const waUrl = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`
-          
-          // Redirection directe pour éviter le blocage des pop-ups
-          setTimeout(() => {
-            window.location.href = waUrl
-          }, 600)
-        }
+        // La commande est déjà enregistrée et le marchand est notifié (push + tableau de bord).
+        // On reste sur Jokoo : le client peut, s'il le souhaite, écrire au vendeur via le bouton WhatsApp
+        // (ouvert dans un nouvel onglet) ci-dessous.
 
       } else {
         const failed = results.find(r => !r.ok)
