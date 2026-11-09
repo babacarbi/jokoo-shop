@@ -574,7 +574,7 @@ export default function HomePage() {
           ))}
         </div>
         <div style={{ borderTop: '1px solid #1f2937', paddingTop: 16, textAlign: 'center', fontSize: '0.72rem' }}>
-          © 2026 Jokoo · Tous droits réservés · Dakar, Sénégal
+          © 2026 Jokoo · Tous droits réservés · Développé par GESTIC
         </div>
       </footer>
 
