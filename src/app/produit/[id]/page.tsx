@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Star, ArrowLeft, ShoppingCart, Minus, Plus, Check, Store, Phone, Loader2 } from 'lucide-react'
+import { Star, ArrowLeft, ShoppingCart, Minus, Plus, Check, Store, Phone, Loader2, Heart } from 'lucide-react'
+import { isFavorite, toggleFavorite } from '@/lib/favorites'
 import { useCart } from '@/lib/cart-context'
 import { createClient } from '@/lib/supabase/client'
 import { getShopData } from '@/app/actions'
@@ -35,6 +36,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [p, setP] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
+  const [fav, setFav] = useState(false)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -68,6 +70,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     }
     loadProduct()
   }, [id])
+
+  useEffect(() => { if (p) setFav(isFavorite(p.id)) }, [p])
 
   if (loading) {
     return (
@@ -156,6 +160,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         {discount && (
           <div style={{ position: 'absolute', top: 10, left: 10, background: '#ef4444', color: 'white', fontWeight: 800, fontSize: '0.72rem', padding: '4px 8px', borderRadius: 6 }}>-{discount}%</div>
         )}
+        <button type="button" aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          onClick={() => setFav(toggleFavorite({ id: p.id, name: p.name, price: p.price, img: p.img, shop: p.shop }))}
+          style={{ position: 'absolute', top: 10, right: 10, width: 42, height: 42, borderRadius: '50%', background: 'white', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,.12)', minHeight: 'auto' }}>
+          <Heart size={20} color={fav ? '#ef4444' : '#6b7280'} fill={fav ? '#ef4444' : 'none'} />
+        </button>
       </div>
 
       {/* PRIX + NOM */}

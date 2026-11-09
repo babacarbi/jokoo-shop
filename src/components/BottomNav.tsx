@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Store, ShoppingCart, ClipboardList } from 'lucide-react'
+import { Home, LayoutGrid, ShoppingCart, Heart, User } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 
 const navItems = [
-  { href: '/',              icon: Home,          label: 'Accueil' },
-  { href: '/boutiques',     icon: Store,         label: 'Boutiques' },
-  { href: '/panier',        icon: ShoppingCart,  label: 'Panier', cart: true },
-  { href: '/mes-commandes', icon: ClipboardList, label: 'Mes commandes' },
+  { href: '/',           icon: Home,         label: 'Accueil' },
+  { href: '/categories', icon: LayoutGrid,   label: 'Catégories' },
+  { href: '/panier',     icon: ShoppingCart, label: 'Panier', cart: true },
+  { href: '/favoris',    icon: Heart,        label: 'Favoris' },
+  { href: '/compte',     icon: User,         label: 'Compte' },
 ]
 
 export default function BottomNav() {
