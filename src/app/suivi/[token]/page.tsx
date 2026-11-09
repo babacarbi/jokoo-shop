@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getOrderByTrackingToken } from '@/app/actions'
+import ReviewBox from '@/components/ReviewBox'
 import { Package, CheckCircle, Truck, ClipboardList, XCircle, Clock, Home, ArrowLeft } from 'lucide-react'
 
 /** Barre d'application native : fixe en haut, respecte l'encoche (safe-area) */
@@ -433,6 +434,8 @@ export default function SuiviPage() {
             </div>
           </div>
         )}
+
+        {(order.status === 'delivered_paid' || order.status === 'delivered_unpaid') && <ReviewBox token={token as string} />}
 
         {/* ── Note informative ── */}
         <div style={{ background: 'rgba(45,107,228,0.06)', border: '1px solid rgba(45,107,228,0.12)', borderRadius: 14, padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>

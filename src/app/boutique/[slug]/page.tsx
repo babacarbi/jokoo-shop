@@ -173,6 +173,15 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
   const appUrl = host ? `${proto}://${host}` : ''
   const shopUrl = `${appUrl}/boutique/${slug}`
 
+  // Note réelle de la boutique (avis de commandes livrées)
+  let avgRating = 0, reviewCount = 0
+  try {
+    const sb = await createAdminClient()
+    const { data: rvs } = await sb.from('product_reviews').select('rating').eq('shop_id', shop.id).limit(1000)
+    reviewCount = rvs?.length ?? 0
+    avgRating = reviewCount ? rvs!.reduce((s, r) => s + r.rating, 0) / reviewCount : 0
+  } catch {}
+
   return (
     <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
@@ -263,14 +272,15 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
           </div>
           <div style={{ width: 1, background: '#e5e7eb' }} />
           <div style={{ textAlign: 'center', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Star size={14} fill="#f59e0b" color="#f59e0b" />
-            <div style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827' }}>4.8</div>
-            <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>/ 5</div>
-          </div>
-          <div style={{ width: 1, background: '#e5e7eb' }} />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontWeight: 900, fontSize: '1.1rem', color: '#16a34a' }}>✓</div>
-            <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Vérifié</div>
+            {reviewCount > 0 ? (
+              <>
+                <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                <div style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827' }}>{avgRating.toFixed(1)}</div>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>/ 5 · {reviewCount} avis</div>
+              </>
+            ) : (
+              <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Pas encore d&apos;avis</div>
+            )}
           </div>
         </div>
       </div>

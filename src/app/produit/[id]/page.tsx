@@ -37,6 +37,14 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
   const [fav, setFav] = useState(false)
+  const [rv, setRv] = useState<{ count: number; avg: number; reviews: { rating: number; comment: string | null; buyer_name: string | null; created_at: string }[] }>({ count: 0, avg: 0, reviews: [] })
+
+  useEffect(() => {
+    fetch(`/api/reviews?product_id=${encodeURIComponent(id)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && typeof d.count === 'number') setRv(d) })
+      .catch(() => {})
+  }, [id])
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -61,8 +69,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           shop: shopData?.name || 'Boutique',
           merchantPhone: shopData?.phone || null,
           img: data.product_images?.[0]?.url || null,
-          rating: 5,
-          reviews: 1,
           stock: data.stock || 0
         })
       }
@@ -185,10 +191,34 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         </div>
         <div style={{ fontSize: '0.75rem', color: GREEN, fontWeight: 600, marginBottom: 8 }}>✓ En stock ({p.stock} {p.stock > 1 ? 'disponibles' : 'disponible'})</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Stars r={p.rating} />
-          <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{p.reviews} avis</span>
+          {rv.count > 0 ? (
+            <>
+              <Stars r={rv.avg} />
+              <span style={{ fontSize: '0.78rem', color: '#374151', fontWeight: 700 }}>{rv.avg.toFixed(1)}</span>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>({rv.count} avis)</span>
+            </>
+          ) : (
+            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Pas encore d&apos;avis</span>
+          )}
         </div>
       </div>
+
+      {/* AVIS CLIENTS (commandes livrées uniquement) */}
+      {rv.count > 0 && (
+        <div style={{ background: 'white', margin: '6px 0', padding: '14px 16px' }}>
+          <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#111827', marginBottom: 10 }}>Avis clients ({rv.count})</div>
+          {rv.reviews.map((r, i) => (
+            <div key={i} style={{ padding: '10px 0', borderTop: i ? '1px solid #f3f4f6' : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                <Stars r={r.rating} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>{r.buyer_name || 'Client'}</span>
+                <span style={{ fontSize: '0.68rem', color: '#9ca3af' }}>· Achat vérifié · {new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+              </div>
+              {r.comment && <p style={{ margin: 0, fontSize: '0.82rem', color: '#374151', lineHeight: 1.5 }}>{r.comment}</p>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ZONE D'ACTION */}
       <div style={{ background: 'white', margin: '6px 0', padding: '16px' }}>
