@@ -118,23 +118,63 @@ export async function getMyOrdersAction() {
   const { data: shop } = await adminSupabase.from('shops').select('id, name').eq('owner_id', user.id).limit(1).maybeSingle()
   if (!shop) return []
 
-  // Commandes rattachées par shop_id (fiable)
-  const { data: byId } = await adminSupabase.from('guest_orders')
-    .select('*')
-    .eq('shop_id', shop.id)
-
-  // Anciennes commandes sans shop_id : correspondance EXACTE du nom (pas de motif ilike)
-  let legacy: typeof byId = []
-  if (shop.name) {
-    const { data } = await adminSupabase.from('guest_orders')
-      .select('*')
-      .is('shop_id', null)
-      .eq('shop_name', shop.name)
-    legacy = data ?? []
-  }
+  // Commandes par shop_id (fiable) + anciennes commandes sans shop_id (nom exact), en parallèle
+  const [{ data: byId }, { data: legacy }] = await Promise.all([
+    adminSupabase.from('guest_orders').select('*').eq('shop_id', shop.id)
+      .order('created_at', { ascending: false }).limit(200),
+    shop.name
+      ? adminSupabase.from('guest_orders').select('*').is('shop_id', null).eq('shop_name', shop.name)
+          .order('created_at', { ascending: false }).limit(50)
+      : Promise.resolve({ data: [] as any[] }),
+  ])
 
   return [...(byId ?? []), ...(legacy ?? [])]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+}
+
+/**
+ * Version ultra-légère pour la détection de nouvelles commandes (polling) :
+ * uniquement les commandes au statut 'new', 4 colonnes, 20 lignes max.
+ */
+export async function getNewOrdersLiteAction() {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const adminSupabase = await createAdminClient()
+  const { data: shop } = await adminSupabase.from('shops').select('id').eq('owner_id', user.id).limit(1).maybeSingle()
+  if (!shop) return []
+  const { data } = await adminSupabase.from('guest_orders')
+    .select('id, product_name, quantity, price')
+    .eq('shop_id', shop.id).eq('status', 'new')
+    .order('created_at', { ascending: false }).limit(20)
+  return data ?? []
+}
+
+/**
+ * Produits du marchand en UN aller-retour serveur (boutique + purge des
+ * brouillons périmés + liste), colonnes minimales.
+ */
+export async function getMyProductsAction(draftTtlDays = 10) {
+  const { createClient } = await import('@/lib/supabase/server')
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { noUser: true as const, products: [] as any[] }
+  const admin = await createAdminClient()
+  const { data: shop } = await admin.from('shops').select('id').eq('owner_id', user.id).limit(1).maybeSingle()
+  if (!shop) return { noShop: true as const, products: [] as any[] }
+
+  const limit = new Date(Date.now() - draftTtlDays * 86400000).toISOString()
+  await admin.from('products').delete().eq('shop_id', shop.id).eq('status', 'draft').lt('updated_at', limit)
+
+  const { data } = await admin.from('products')
+    .select('id, name, price, compare_price, stock, status, sku, created_at, updated_at, product_images(url)')
+    .eq('shop_id', shop.id)
+    .order('created_at', { ascending: false })
+    .limit(300)
+  // une seule miniature par produit
+  const products = (data ?? []).map((p: any) => ({ ...p, product_images: (p.product_images ?? []).slice(0, 1) }))
+  return { products }
 }
 
 /**

@@ -227,7 +227,7 @@ export default function SuiviPage() {
       setLoading(false)
     })
     load()
-    const t = setInterval(load, 15000) // mise à jour automatique réelle
+    const t = setInterval(() => { if (!document.hidden) load() }, 20000) // mise à jour auto (pause en arrière-plan)
     return () => { stop = true; clearInterval(t) }
   }, [token])
 

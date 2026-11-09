@@ -141,6 +141,7 @@ function timeAgo(dateStr: string) {
 }
 
 // ─── Page principale ──────────────────────────────────────────────────────────
+const ORDERS_CACHE = 'jokoo_merchant_orders_cache'
 export default function MerchantOrdersPage() {
   const router  = useRouter()
   const supabase = createClient()
@@ -154,16 +155,20 @@ export default function MerchantOrdersPage() {
 
   async function loadOrders(silent = false) {
     if (!silent) setLoading(true)
-    const data = await getMyOrdersAction()
-    setOrders(data as GuestOrder[])
+    const data = (await getMyOrdersAction()) as GuestOrder[]
+    setOrders(data)
+    try { localStorage.setItem(ORDERS_CACHE, JSON.stringify(data)) } catch {}
     if (!silent) setLoading(false)
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.replace('/login')
-      else loadOrders()
-    })
+    // Affichage instantané depuis le cache, puis rafraîchissement en arrière-plan
+    let hadCache = false
+    try {
+      const raw = localStorage.getItem(ORDERS_CACHE)
+      if (raw) { setOrders(JSON.parse(raw)); setLoading(false); hadCache = true }
+    } catch {}
+    loadOrders(hadCache)
   }, [])
 
   useEffect(() => {
@@ -179,7 +184,7 @@ export default function MerchantOrdersPage() {
     try {
       await updateGuestOrderStatusAction(id, status)
       setOrders(prev => prev.map(o => o.id === id ? { ...o, status: status as string } : o))
-      await loadOrders(true)
+      // mise à jour optimiste déjà appliquée : pas de rechargement complet (économie d'egress)
       const label = STATUS_CONFIG[status]?.label ?? status
       setSuccessMsg(`✅ Statut mis à jour : ${label}`)
       setTimeout(() => setSuccessMsg(null), 3500)

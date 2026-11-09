@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getMyShopAction } from '@/app/actions'
+import { getMyProductsAction } from '@/app/actions'
 import {
   Package, Plus, Search, Edit2, Trash2, Eye, EyeOff,
   LayoutDashboard, ShoppingBag, Store, LogOut,
@@ -19,6 +19,7 @@ const navItems = [
   { href: '/merchant/shop',         icon: Store,           label: 'Ma Boutique' },
 ]
 const DRAFT_TTL_DAYS = 10
+const PRODUCTS_CACHE = 'jokoo_merchant_products_cache'
 
 const statusConfig: Record<string, { label: string; badge: string }> = {
   active:       { label: 'Publié',    badge: 'badge-active' },
@@ -52,30 +53,29 @@ export default function MerchantProductsPage() {
 
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => { loadProducts() }, [])
+  useEffect(() => {
+    // Affichage instantané depuis le cache, puis rafraîchissement discret
+    let hadCache = false
+    try {
+      const raw = localStorage.getItem(PRODUCTS_CACHE)
+      if (raw) { setProducts(JSON.parse(raw)); setLoading(false); hadCache = true }
+    } catch {}
+    loadProducts(hadCache)
+  }, [])
 
-  async function loadProducts() {
-    setLoading(true)
+  async function loadProducts(silent = false) {
+    if (!silent) setLoading(true)
     setError(null)
     try {
-      const shop = await getMyShopAction()
-      
+      const res: any = await getMyProductsAction(DRAFT_TTL_DAYS)
       // Aucune boutique trouvée → rediriger vers les réglages boutique
-      if (!shop) { router.push('/merchant/shop'); return }
-
-      // Supprimer les brouillons inactifs depuis plus de DRAFT_TTL_DAYS jours
-      const limit = new Date(Date.now() - DRAFT_TTL_DAYS * 86400000).toISOString()
-      await supabase.from('products').delete().eq('shop_id', shop.id).eq('status', 'draft').lt('updated_at', limit)
-
-      // Charger les produits de cette boutique
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, name, price, compare_price, stock, status, sku, created_at, updated_at, product_images(url)')
-        .eq('shop_id', shop.id)
-        .order('created_at', { ascending: false })
-
-      if (!error && data) setProducts(data as Product[])
-    } catch {}
+      if (res.noShop) { router.push('/merchant/shop'); return }
+      if (res.noUser) { router.replace('/login'); return }
+      setProducts(res.products as Product[])
+      try { localStorage.setItem(PRODUCTS_CACHE, JSON.stringify(res.products)) } catch {}
+    } catch {
+      if (!silent) setError('Chargement impossible. Vérifiez votre connexion.')
+    }
     setLoading(false)
   }
 
@@ -191,7 +191,7 @@ export default function MerchantProductsPage() {
                 {error}
               </div>
               <br />
-              <button onClick={loadProducts} className="btn btn-primary btn-sm">Réessayer</button>
+              <button onClick={() => loadProducts()} className="btn btn-primary btn-sm">Réessayer</button>
             </div>
           ) : loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60, gap: 12, color: 'hsl(215 16% 55%)' }}>

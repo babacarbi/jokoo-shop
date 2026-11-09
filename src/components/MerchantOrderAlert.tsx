@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getMyOrdersAction } from '@/app/actions'
+import { getNewOrdersLiteAction } from '@/app/actions'
 
 /**
  * Alerte visuelle clignotante dans l'app quand une nouvelle commande arrive
@@ -63,12 +63,13 @@ export default function MerchantOrderAlert() {
   useEffect(() => {
     let stop = false
     async function check() {
+      if (document.hidden) return // pas de requête en arrière-plan (économie d'egress)
       try {
-        const orders: any[] = (await getMyOrdersAction()) as any[]
+        const orders: any[] = (await getNewOrdersLiteAction()) as any[]
         if (stop) return
         const ids = new Set(orders.map(o => o.id as string))
         if (known.current === null) { known.current = ids; return }
-        const fresh = orders.filter(o => !known.current!.has(o.id) && o.status === 'new')
+        const fresh = orders.filter(o => !known.current!.has(o.id))
         known.current = ids
         if (fresh.length > 0) {
           const f = fresh[0]
@@ -82,8 +83,10 @@ export default function MerchantOrderAlert() {
       } catch {}
     }
     check()
-    const t = setInterval(check, 12000)
-    return () => { stop = true; clearInterval(t) }
+    const t = setInterval(check, 20000)
+    const onVis = () => { if (!document.hidden) check() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => { stop = true; clearInterval(t); document.removeEventListener('visibilitychange', onVis) }
   }, [])
 
   if (!alert) return null

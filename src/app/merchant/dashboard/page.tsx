@@ -134,27 +134,34 @@ export default function MerchantDashboard() {
   // Commandes + produits réels, rafraîchis toutes les 30 s et à chaque nouvelle commande
   useEffect(() => {
     let stop = false
-    async function load() {
+    async function loadOrders() {
+      if (document.hidden) return
       try {
         const o = (await getMyOrdersAction()) as unknown as LiveOrder[]
         if (!stop) setOrders(o)
       } catch {}
+    }
+    // Produits + cat\u00e9gories : une seule fois (pas de re-t\u00e9l\u00e9chargement p\u00e9riodique)
+    async function loadStatic() {
       try {
         const r = await fetch('/api/merchant/shop', { credentials: 'include' })
         const d = r.ok ? await r.json() : null
         if (!d?.shop?.id || stop) return
-        const { data: prods } = await supabase.from('products')
-          .select('id, name, price, stock, category_id, product_images(url)')
-          .eq('shop_id', d.shop.id).neq('status', 'archived')
-        if (!stop) setProducts((prods ?? []) as unknown as LiveProduct[])
-        const { data: cats } = await supabase.from('categories').select('id, name')
+        const [{ data: prods }, { data: cats }] = await Promise.all([
+          supabase.from('products')
+            .select('id, name, price, stock, category_id, product_images(url)')
+            .eq('shop_id', d.shop.id).neq('status', 'archived').limit(200),
+          supabase.from('categories').select('id, name'),
+        ])
+        if (!stop) setProducts(((prods ?? []) as unknown as LiveProduct[]).map(p => ({ ...p, product_images: (p.product_images ?? []).slice(0, 1) })))
         if (!stop && cats) setCatNames(Object.fromEntries(cats.map((c: any) => [c.id, c.name])))
       } catch {}
     }
-    load()
-    const t = setInterval(load, 30000)
-    window.addEventListener('jokoo:new-order', load)
-    return () => { stop = true; clearInterval(t); window.removeEventListener('jokoo:new-order', load) }
+    loadOrders()
+    loadStatic()
+    const t = setInterval(loadOrders, 60000)
+    window.addEventListener('jokoo:new-order', loadOrders)
+    return () => { stop = true; clearInterval(t); window.removeEventListener('jokoo:new-order', loadOrders) }
   }, [])
 
   function dismissNudge(id: string) {
