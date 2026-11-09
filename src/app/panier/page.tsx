@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, ShoppingCart } from 'lucide-react'
+import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, ShoppingCart, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/lib/cart-context'
 
 const ORANGE = '#f97316'
@@ -15,9 +16,22 @@ function fmt(p: number) {
 export default function PanierPage() {
   const router = useRouter()
   const { items, updateQty, removeItem, totalItems, totalPrice } = useCart()
+  const [going, setGoing] = useState(false)
+
+  // Précharge la page commande dès l'ouverture du panier → navigation instantanée
+  useEffect(() => { router.prefetch('/commande') }, [router])
+
+  function goCheckout() {
+    if (going) return
+    setGoing(true) // retour visuel immédiat
+    try { navigator.vibrate?.(10) } catch {}
+    router.push('/commande')
+    setTimeout(() => setGoing(false), 4000) // sécurité si la navigation échoue
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))' }}>
+      <style>{`.jk-press{transition:transform .08s ease,filter .08s ease}.jk-press:active:not(:disabled){transform:scale(.97);filter:brightness(.92)}`}</style>
 
       {/* ── NAVBAR ── */}
       <nav style={{ background: 'white', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid #e5e7eb' }}>
@@ -133,10 +147,12 @@ export default function PanierPage() {
             <span style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', fontFamily: 'Outfit, sans-serif' }}>{fmt(totalPrice)}</span>
           </div>
           <button
-            onClick={() => router.push('/commande')}
-            style={{ width: '100%', background: ORANGE, color: 'white', border: 'none', borderRadius: 12, padding: '15px 0', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 'auto', boxShadow: '0 4px 14px rgba(249,115,22,0.35)' }}
+            onClick={goCheckout}
+            disabled={going}
+            className="jk-press"
+            style={{ width: '100%', background: going ? '#ea580c' : ORANGE, color: 'white', border: 'none', borderRadius: 12, padding: '15px 0', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 'auto', boxShadow: '0 4px 14px rgba(249,115,22,0.35)', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', opacity: going ? 0.92 : 1 }}
           >
-            <ShoppingBag size={18} /> Finaliser ma commande
+            {going ? <><Loader2 size={18} className="animate-spin" /> Chargement…</> : <><ShoppingBag size={18} /> Finaliser ma commande</>}
           </button>
         </div>
       )}

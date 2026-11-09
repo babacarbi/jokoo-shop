@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Phone, User, MessageCircle, ShoppingBag, ClipboardList } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Phone, User, MessageCircle, ShoppingBag, ClipboardList, Loader2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 
 const ORANGE = '#f97316'
@@ -96,6 +96,7 @@ export default function CommandePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (status === 'loading') return
     if (!fullName.trim() || !phoneNum.trim()) {
       setErrMsg('Veuillez remplir tous les champs obligatoires.')
       return
@@ -229,6 +230,7 @@ export default function CommandePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f3f4f6', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))' }}>
+      <style>{`.jk-press{transition:transform .08s ease,filter .08s ease}.jk-press:active:not(:disabled){transform:scale(.97);filter:brightness(.92)}`}</style>
 
       {/* ── NAVBAR ── */}
       <nav style={{ background: 'white', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid #e5e7eb' }}>
@@ -386,16 +388,18 @@ export default function CommandePage() {
         <button
           type="submit"
           disabled={status === 'loading'}
+          className="jk-press"
           style={{
-            width: '100%', background: status === 'loading' ? '#9ca3af' : `linear-gradient(135deg, ${ORANGE}, #ea580c)`,
+            width: '100%', background: status === 'loading' ? '#ea580c' : `linear-gradient(135deg, ${ORANGE}, #ea580c)`,
             color: 'white', border: 'none', borderRadius: 14, padding: '16px 0',
-            fontSize: '1rem', fontWeight: 900, cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+            fontSize: '1rem', fontWeight: 900, cursor: status === 'loading' ? 'wait' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             minHeight: 'auto', boxShadow: '0 4px 20px rgba(234,88,12,0.35)',
-            fontFamily: 'Outfit, sans-serif',
+            fontFamily: 'Outfit, sans-serif', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+            opacity: status === 'loading' ? 0.95 : 1,
           }}
         >
-          {status === 'loading' ? '⏳ Envoi en cours…' : <><ShoppingBag size={20} /> Confirmer ma commande — {fmt(totalPrice)}</>}
+          {status === 'loading' ? <><Loader2 size={20} className="animate-spin" /> Envoi en cours…</> : <><ShoppingBag size={20} /> Confirmer ma commande — {fmt(totalPrice)}</>}
         </button>
       </form>
     </div>

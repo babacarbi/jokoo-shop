@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { randomUUID } from 'crypto'
 import { sendPushToShop } from '@/lib/push'
 import { z } from 'zod'
@@ -29,23 +29,19 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createAdminClient()
 
-    // ── Anti-spam : limite de commandes par numéro ──────────────────────
+    // ── Contrôles en parallèle : anti-spam, produit, image ───────────────
     const since = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const { count } = await supabase
-      .from('guest_orders')
-      .select('id', { count: 'exact', head: true })
-      .eq('buyer_phone', o.buyer_phone)
-      .gte('created_at', since)
+    const [{ count }, { data: product }, { data: img }] = await Promise.all([
+      supabase.from('guest_orders').select('id', { count: 'exact', head: true })
+        .eq('buyer_phone', o.buyer_phone).gte('created_at', since),
+      supabase.from('products').select('id, name, price, stock, status, shop_id')
+        .eq('id', o.product_id).maybeSingle(),
+      supabase.from('product_images').select('url')
+        .eq('product_id', o.product_id).limit(1).maybeSingle(),
+    ])
     if ((count ?? 0) >= MAX_ORDERS_PER_PHONE_PER_HOUR) {
       return NextResponse.json({ error: 'Trop de commandes en peu de temps. Réessayez plus tard.' }, { status: 429 })
     }
-
-    // ── Produit + boutique relus depuis la base ──────────────────────────
-    const { data: product } = await supabase
-      .from('products')
-      .select('id, name, price, stock, status, shop_id')
-      .eq('id', o.product_id)
-      .maybeSingle()
     if (!product || product.status !== 'active') {
       return NextResponse.json({ error: 'Produit indisponible' }, { status: 404 })
     }
@@ -64,13 +60,6 @@ export async function POST(req: NextRequest) {
     if (!shop || shop.status === 'suspended' || shop.status === 'closed') {
       return NextResponse.json({ error: 'Boutique indisponible' }, { status: 404 })
     }
-
-    const { data: img } = await supabase
-      .from('product_images')
-      .select('url')
-      .eq('product_id', product.id)
-      .limit(1)
-      .maybeSingle()
 
     // Token unique de suivi (permet à l'acheteur de suivre sans compte)
     const tracking_token = randomUUID()
@@ -103,14 +92,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Impossible d\'enregistrer la commande' }, { status: 500 })
     }
 
-    try {
-      await sendPushToShop(shop.id, {
-        title: '🛒 Nouvelle commande !',
-        body: `${product.name} × ${o.quantity} — ${(Number(product.price) * o.quantity).toLocaleString('fr-FR')} FCFA · ${o.buyer_fullname}`,
-        url: '/merchant/orders',
-        tag: `order-${data.id}`,
-      })
-    } catch (e) { console.error('Push error:', e) }
+    // Notification push APRÈS la réponse : le client n'attend plus l'envoi
+    const pushPayload = {
+      title: '🛒 Nouvelle commande !',
+      body: `${product.name} × ${o.quantity} — ${(Number(product.price) * o.quantity).toLocaleString('fr-FR')} FCFA · ${o.buyer_fullname}`,
+      url: '/merchant/orders',
+      tag: `order-${data.id}`,
+    }
+    after(async () => {
+      try { await sendPushToShop(shop.id, pushPayload) } catch (e) { console.error('Push error:', e) }
+    })
 
     return NextResponse.json({
       success: true,
