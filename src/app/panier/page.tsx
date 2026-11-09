@@ -125,8 +125,9 @@ export default function PanierPage() {
       )}
 
       {/* ── BARRE FIXE BAS ── */}
+      {items.length > 0 && <div style={{ height: 'calc(190px + var(--bottom-nav-height, 60px) + var(--safe-bottom, 0px))' }} />}
       {items.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '1px solid #e5e7eb', padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', zIndex: 500, boxShadow: '0 -2px 12px rgba(0,0,0,0.08)' }}>
+        <div style={{ position: 'fixed', bottom: 'calc(var(--bottom-nav-height, 60px) + var(--safe-bottom, 0px))', left: 0, right: 0, background: 'white', borderTop: '1px solid #e5e7eb', padding: '12px 16px', zIndex: 500, boxShadow: '0 -2px 12px rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>{totalItems} article{totalItems > 1 ? 's' : ''}</span>
             <span style={{ fontWeight: 900, fontSize: '1.1rem', color: '#111827', fontFamily: 'Outfit, sans-serif' }}>{fmt(totalPrice)}</span>

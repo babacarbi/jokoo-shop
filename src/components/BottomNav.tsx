@@ -17,14 +17,10 @@ export default function BottomNav() {
   const pathname = usePathname()
   const { totalItems } = useCart()
 
-  // Ne pas afficher sur les pages admin/merchant
-  // ni sur les pages avec leur propre barre d'action (produit, panier, commande)
+  // Toujours visible côté acheteur (sauf espaces admin/marchand et pages de connexion)
   if (
     pathname.startsWith('/admin') ||
     pathname.startsWith('/merchant') ||
-    pathname.startsWith('/produit') ||
-    pathname.startsWith('/panier') ||
-    pathname.startsWith('/commande') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/login')
   ) return null

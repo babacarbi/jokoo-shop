@@ -32,7 +32,7 @@ export default function CategoriesPage() {
       </header>
       <main style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, maxWidth: 640, margin: '0 auto' }}>
         {CATEGORIES.map(c => (
-          <Link key={c.slug} href={`/boutiques?cat=${c.slug}`} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', textDecoration: 'none', border: '1px solid #e5e7eb', display: 'block' }}>
+          <Link key={c.slug} href={`/categorie/${c.slug}`} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', textDecoration: 'none', border: '1px solid #e5e7eb', display: 'block' }}>
             <img src={c.img} alt={c.label} loading="lazy" style={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block' }} />
             <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 6, color: '#111827', fontWeight: 800, fontSize: '0.84rem' }}>
               <span style={{ flex: 1 }}>{c.label}</span>

@@ -365,7 +365,7 @@ export default function HomePage() {
             <Store size={13} /> Boutiques
           </Link>
           {CATEGORIES.map(cat => (
-            <Link key={cat.slug} href={`/boutiques?cat=${cat.slug}`} className="navbar-cat-item">
+            <Link key={cat.slug} href={`/categorie/${cat.slug}`} className="navbar-cat-item">
               {cat.label}
             </Link>
           ))}
@@ -448,7 +448,7 @@ export default function HomePage() {
           </div>
           <div className="cats-scroll">
             {CATEGORIES.map(cat => (
-              <Link key={cat.slug} href={`/boutiques?cat=${cat.slug}`} className="cat-item">
+              <Link key={cat.slug} href={`/categorie/${cat.slug}`} className="cat-item">
                 <div className="cat-img-wrap">
                   <img src={cat.img} alt={cat.label} loading="lazy" />
                 </div>
