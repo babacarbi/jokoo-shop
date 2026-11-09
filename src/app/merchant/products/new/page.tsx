@@ -13,6 +13,7 @@ import CatalogModal from '@/components/merchant/CatalogModal'
 import { CatalogProduct } from '@/types'
 
 interface ImagePreview { file: File; url: string }
+const MAX_DRAFTS = 5
 const DRAFT_KEY = 'jokoo_product_draft'
 
 const categories = [
@@ -164,24 +165,37 @@ export default function NewProductPage() {
         return
       }
 
-      // Créer le produit
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .insert({
-          shop_id: shop.id,
-          name: form.name,
-          slug: slugify(form.name),
-          description: form.description || null,
-          price: parseFloat(form.price),
-          compare_price: form.compare_price ? parseFloat(form.compare_price) : null,
-          stock: parseInt(form.stock),
-          sku: form.sku || null,
-          category_id: form.category_id || null,
-          status: finalStatus,
-          weight: form.weight ? parseFloat(form.weight) : null,
-        })
-        .select()
-        .single()
+      const payload = {
+        shop_id: shop.id,
+        name: form.name,
+        slug: slugify(form.name),
+        description: form.description || null,
+        price: parseFloat(form.price),
+        compare_price: form.compare_price ? parseFloat(form.compare_price) : null,
+        stock: parseInt(form.stock),
+        sku: form.sku || null,
+        category_id: form.category_id || null,
+        status: finalStatus,
+        weight: form.weight ? parseFloat(form.weight) : null,
+      }
+
+      // Brouillons : réutiliser un brouillon du même nom, sinon limiter à MAX_DRAFTS
+      let existingId: string | null = null
+      if (finalStatus === 'draft') {
+        const { data: drafts } = await supabase.from('products').select('id, name').eq('shop_id', shop.id).eq('status', 'draft')
+        const same = (drafts || []).find(d => d.name.trim().toLowerCase() === form.name.trim().toLowerCase())
+        if (same) existingId = same.id
+        else if ((drafts || []).length >= MAX_DRAFTS) {
+          setError(`Limite de ${MAX_DRAFTS} brouillons atteinte. Publiez ou supprimez un ancien brouillon (Produits → Brouillons).`)
+          setLoading(false)
+          return
+        }
+      }
+
+      // Créer (ou mettre à jour) le produit
+      const { data: product, error: productError } = existingId
+        ? await supabase.from('products').update(payload).eq('id', existingId).select().single()
+        : await supabase.from('products').insert(payload).select().single()
 
       if (productError) { setError('Erreur lors de la création : ' + productError.message); setLoading(false); return }
 

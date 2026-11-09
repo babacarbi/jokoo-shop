@@ -18,6 +18,7 @@ const navItems = [
   { href: '/merchant/orders',       icon: ShoppingBag,     label: 'Commandes' },
   { href: '/merchant/shop',         icon: Store,           label: 'Ma Boutique' },
 ]
+const DRAFT_TTL_DAYS = 10
 
 const statusConfig: Record<string, { label: string; badge: string }> = {
   active:       { label: 'Publié',    badge: 'badge-active' },
@@ -35,6 +36,7 @@ interface Product {
   status: string
   sku: string | null
   created_at: string
+  updated_at?: string
   product_images: { url: string }[]
 }
 
@@ -61,10 +63,14 @@ export default function MerchantProductsPage() {
       // Aucune boutique trouvée → rediriger vers les réglages boutique
       if (!shop) { router.push('/merchant/shop'); return }
 
+      // Supprimer les brouillons inactifs depuis plus de DRAFT_TTL_DAYS jours
+      const limit = new Date(Date.now() - DRAFT_TTL_DAYS * 86400000).toISOString()
+      await supabase.from('products').delete().eq('shop_id', shop.id).eq('status', 'draft').lt('updated_at', limit)
+
       // Charger les produits de cette boutique
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, compare_price, stock, status, sku, created_at, product_images(url)')
+        .select('id, name, price, compare_price, stock, status, sku, created_at, updated_at, product_images(url)')
         .eq('shop_id', shop.id)
         .order('created_at', { ascending: false })
 
@@ -194,6 +200,12 @@ export default function MerchantProductsPage() {
             </div>
           ) : (
             <>
+              {stats.draft > 0 && (
+                <div style={{ background: 'hsl(38 92% 95%)', border: '1px solid hsl(38 92% 80%)', color: 'hsl(30 80% 30%)', borderRadius: 10, padding: '10px 12px', fontSize: '0.78rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>📝 <b>{stats.draft}/5 brouillon{stats.draft > 1 ? 's' : ''}</b> · supprimé{stats.draft > 1 ? 's' : ''} automatiquement après {DRAFT_TTL_DAYS} jours sans modification.</span>
+                  <button onClick={() => setFilterStatus('draft')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'hsl(221 83% 53%)', fontWeight: 700, fontSize: '0.78rem', textDecoration: 'underline' }}>Voir</button>
+                </div>
+              )}
 
               {/* Filtres + Recherche */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -250,6 +262,10 @@ export default function MerchantProductsPage() {
                                   <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{product.name}</div>
                                   <div style={{ fontSize: '0.72rem', color: 'hsl(220 15% 50%)' }}>
                                     {new Date(product.created_at).toLocaleDateString('fr-FR')}
+                                    {product.status === 'draft' && (() => {
+                                      const left = DRAFT_TTL_DAYS - Math.floor((Date.now() - new Date(product.updated_at || product.created_at).getTime()) / 86400000)
+                                      return <span style={{ color: left <= 3 ? 'hsl(0 72% 51%)' : 'hsl(32 95% 45%)', fontWeight: 700 }}> · expire dans {Math.max(left, 0)} j</span>
+                                    })()}
                                     {product.sku && ` · ${product.sku}`}
                                   </div>
                                 </div>
