@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, ShoppingCart, User, Star, Heart, ArrowRight, Store, Tag, Shield, Truck, Zap, Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -175,6 +176,11 @@ export default function HomePage() {
   const supabase = createClient()
   const { totalItems } = useCart()
   const [loggedIn, setLoggedIn] = useState(false)
+  const router = useRouter()
+  const goSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    router.push(`/recherche?q=${encodeURIComponent(q.trim())}`)
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
@@ -306,7 +312,7 @@ export default function HomePage() {
           </Link>
 
           {/* Search bar — desktop only (hidden on mobile) */}
-          <div className="navbar-desktop-search" style={{ display: 'none' }}>
+          <form className="navbar-desktop-search" style={{ display: 'none' }} onSubmit={goSearch}>
             <input
               type="search"
               placeholder="Cherchez un produit, une marque ou une catégorie"
@@ -317,10 +323,10 @@ export default function HomePage() {
               aria-label="Rechercher"
               suppressHydrationWarning
             />
-            <button className="navbar-search-btn" style={{ borderRadius: '0 10px 10px 0' }}>
+            <button type="submit" className="navbar-search-btn" style={{ borderRadius: '0 10px 10px 0' }}>
               <Search size={15} /> Rechercher
             </button>
-          </div>
+          </form>
 
           {/* Actions — desktop */}
           <div className="navbar-actions-desktop" style={{ display: 'none', gap: 8, marginLeft: 'auto' }}>
@@ -342,7 +348,7 @@ export default function HomePage() {
         </div>
 
         {/* Search row — mobile only */}
-        <div className="navbar-search-row">
+        <form className="navbar-search-row" onSubmit={goSearch}>
           <input
             type="search"
             placeholder="Cherchez un produit ou une marque..."
@@ -350,14 +356,15 @@ export default function HomePage() {
             onChange={e => setQ(e.target.value)}
             className="navbar-search-input"
             aria-label="Rechercher"
+            enterKeyHint="search"
             suppressHydrationWarning
           />
-          <button className="navbar-search-btn">
+          <button type="submit" className="navbar-search-btn">
             <Search size={15} />
             <span style={{ display: 'none' }}>Rechercher</span>
             <span aria-hidden>OK</span>
           </button>
-        </div>
+        </form>
 
         {/* Category bar */}
         <div className="navbar-cats" role="navigation" aria-label="Catégories">
