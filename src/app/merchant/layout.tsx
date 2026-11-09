@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import MerchantBottomNav from '@/components/MerchantBottomNav'
 import MerchantOrderAlert from '@/components/MerchantOrderAlert'
 import PushNotificationsToggle from '@/components/PushNotificationsToggle'
+import HomeFab from '@/components/HomeFab'
 
 export const metadata: Metadata = {
   title: 'Espace Marchand — Jokoo',
@@ -20,6 +21,7 @@ export default function MerchantLayout({ children }: { children: React.ReactNode
       <MerchantOrderAlert />
       <PushNotificationsToggle silent />
       {children}
+      <HomeFab />
       <MerchantBottomNav />
     </div>
   )

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Phone, User, MessageCircle, ShoppingBag, ClipboardList, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Phone, User, MessageCircle, ShoppingBag, ClipboardList, Loader2, Home } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 
 const ORANGE = '#f97316'
@@ -220,8 +220,8 @@ export default function CommandePage() {
           <Link href="/register?role=buyer" style={{ display: 'block', color: '#6b7280', padding: '10px 4px 0', fontSize: '0.76rem', textDecoration: 'none', lineHeight: 1.5 }}>
             Optionnel : <span style={{ color: BLUE, fontWeight: 700, textDecoration: 'underline' }}>créer un compte</span> pour retrouver vos commandes sur tous vos appareils
           </Link>
-          <Link href="/" style={{ display: 'block', background: '#f3f4f6', color: '#374151', padding: '14px', borderRadius: 12, fontWeight: 800, textDecoration: 'none', fontSize: '0.9rem', marginTop: 12 }}>
-            Continuer mes achats
+          <Link href="/" className="jk-press" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: `linear-gradient(135deg, ${ORANGE}, #ea580c)`, color: 'white', padding: '16px', borderRadius: 14, fontWeight: 900, textDecoration: 'none', fontSize: '1rem', marginTop: 16, boxShadow: '0 6px 20px rgba(234,88,12,0.4)', fontFamily: 'Outfit, sans-serif' }}>
+            <Home size={20} /> Continuer mes achats
           </Link>
         </div>
       </div>

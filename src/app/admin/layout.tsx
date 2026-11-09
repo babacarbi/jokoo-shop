@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import HomeFab from '@/components/HomeFab'
 
 export const metadata: Metadata = {
   title: 'Administration — Jokoo',
@@ -9,6 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'hsl(222 47% 8%)' }}>
       {children}
+      <HomeFab />
     </div>
   )
 }
