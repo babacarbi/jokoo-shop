@@ -4,6 +4,7 @@ import { Store, Phone, MapPin, Globe, ShoppingBag, Star, ArrowLeft, Share2 } fro
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
+import ShareShopCard from '@/components/ShareShopCard'
 
 interface Product {
   id: string
@@ -248,6 +249,11 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
         </div>
       </div>
 
+      {/* LIEN DE PARTAGE (visible sans scroller) */}
+      <div style={{ marginTop: -4, paddingBottom: 4 }}>
+        <ShareShopCard url={shopUrl} shopName={shop.name} />
+      </div>
+
       {/* STATS RAPIDES */}
       <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 20px', display: 'flex', gap: 24, justifyContent: 'center' }}>
@@ -304,20 +310,8 @@ export default async function BoutiquePage({ params }: { params: Promise<{ slug:
       </div>
 
       {/* FOOTER PARTAGE */}
-      <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '24px 20px', marginTop: 20, textAlign: 'center' }}>
-        <p style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: 12 }}>Partagez cette boutique</p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Découvrez ${shop.name} sur Jokoo : ${shopUrl}`)}`}
-            target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#25d366', color: 'white', borderRadius: 10, padding: '10px 16px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700 }}>
-            📱 WhatsApp
-          </a>
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f3f4f6', color: '#374151', borderRadius: 10, padding: '10px 16px', fontSize: '0.75rem', fontFamily: 'monospace', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            🔗 {shopUrl}
-          </div>
-        </div>
+      <div style={{ paddingTop: 12, paddingBottom: 100 }}>
+        <ShareShopCard url={shopUrl} shopName={shop.name} />
       </div>
     </div>
   )
